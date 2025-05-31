@@ -1,20 +1,41 @@
 'use client';
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
 export default function AdminDashboard() {
   const router = useRouter();
   const pathname = usePathname();
 
+  const [metrics, setMetrics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   useEffect(() => {
-    const isAdmin = localStorage.getItem('isAdmin');
-    if (!isAdmin) {
-      router.push('/login');
-    }
+    const fetchMetrics = async () => {
+      if (typeof window !== 'undefined') {
+        const isAdmin = localStorage.getItem('isAdmin');
+        if (!isAdmin) {
+          router.push('/login');
+          return;
+        }
+
+        try {
+          const res = await fetch('/api/admin-metric');
+          if (!res.ok) throw new Error('Gagal mengambil data');
+          const data = await res.json();
+          setMetrics(data);
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchMetrics();
   }, [router]);
 
-  // Fungsi untuk styling icon sidebar
   const iconClasses = (targetPath) =>
     `text-xl p-2 rounded-lg transition-all duration-300 cursor-pointer ${
       pathname === targetPath ? 'bg-white text-pink-600 scale-110' : 'hover:bg-pink-200 text-white'
@@ -44,7 +65,7 @@ export default function AdminDashboard() {
 
         <button
           title="Users"
-          onClick={() => router.push('/admin-qcontact')}
+          onClick={() => router.push('/admin-users')}
           className={iconClasses('/admin-users')}
         >
           👤
@@ -52,7 +73,7 @@ export default function AdminDashboard() {
 
         <button
           title="Gifts"
-          onClick={() => router.push('/admin-stock')}
+          onClick={() => router.push('/admin-gifts')}
           className={iconClasses('/admin-gifts')}
         >
           🎁
@@ -81,35 +102,40 @@ export default function AdminDashboard() {
           <h1 className="text-4xl font-bold text-black">Dashboard</h1>
           <Link
             href="/login"
+            onClick={() => localStorage.removeItem('isAdmin')}
             className="bg-white text-pink-600 px-4 py-2 rounded hover:bg-pink-100 font-bold text-sm"
           >
-            Kembali ke Login
+            Logout
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          {/* Cards Data */}
-          <div className="bg-pink-300 text-black p-4 rounded-xl">
-            <p>Total User</p>
-            <h2 className="text-2xl font-bold">40,689</h2>
-            <p className="text-green-600 text-sm">⬆️ 8.5% Up from yesterday</p>
+        {loading && <p>Loading data...</p>}
+        {error && <p className="text-red-700 font-bold">Error: {error}</p>}
+
+        {metrics && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-pink-300 text-black p-4 rounded-xl">
+              <p>Total Produk</p>
+              <h2 className="text-2xl font-bold">{metrics.totalProduk.toLocaleString()}</h2>
+              <p className="text-green-600 text-sm">⬆️ Up from yesterday</p>
+            </div>
+            <div className="bg-yellow-300 text-black p-4 rounded-xl">
+              <p>Total Order</p>
+              <h2 className="text-2xl font-bold">{metrics.totalOrder.toLocaleString()}</h2>
+              <p className="text-green-600 text-sm">⬆️ Up from past week</p>
+            </div>
+            <div className="bg-pink-200 text-black p-4 rounded-xl">
+              <p>Total Sales</p>
+              <h2 className="text-2xl font-bold">Rp {metrics.totalSales.toLocaleString()}</h2>
+              <p className="text-red-600 text-sm">⬇️ Down from yesterday</p>
+            </div>
+            <div className="bg-red-300 text-black p-4 rounded-xl">
+              <p>Produk Terlaris</p>
+              <h2 className="text-2xl font-bold">{metrics.produkTerlaris}</h2>
+              <p className="text-green-600 text-sm">⭐</p>
+            </div>
           </div>
-          <div className="bg-yellow-300 text-black p-4 rounded-xl">
-            <p>Total Order</p>
-            <h2 className="text-2xl font-bold">10,293</h2>
-            <p className="text-green-600 text-sm">⬆️ 1.3% Up from past week</p>
-          </div>
-          <div className="bg-pink-200 text-black p-4 rounded-xl">
-            <p>Total Sales</p>
-            <h2 className="text-2xl font-bold">Rp89,000</h2>
-            <p className="text-red-600 text-sm">⬇️ Down from yesterday</p>
-          </div>
-          <div className="bg-red-300 text-black p-4 rounded-xl">
-            <p>Total Pending</p>
-            <h2 className="text-2xl font-bold">2040</h2>
-            <p className="text-green-600 text-sm">⬆️ 1.8% Up from yesterday</p>
-          </div>
-        </div>
+        )}
 
         {/* Chart Placeholder */}
         <div className="bg-pink-300 rounded-xl p-4">
@@ -121,7 +147,7 @@ export default function AdminDashboard() {
 
         {/* Footer */}
         <footer className="mt-6 text-center text-sm text-black">
-          ©Rangga Store Copyright © 2023 - Developed by KSI ULAY. Powered by Moodle
+          © Rangga Store Copyright © 2023 - Developed by KSI ULAY. Powered by Moodle
         </footer>
       </div>
     </div>
