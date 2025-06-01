@@ -1,43 +1,68 @@
-import prisma from '../../../lib/prisma';
-
+import { prisma } from '../../../lib/prisma'
 
 export async function GET() {
   try {
-    const totalProduk = await prisma.produk.count();
-    const totalOrder = await prisma.transaksi.count();
-    const totalSales = await prisma.transaksi.aggregate({
-      _sum: { total_harga: true }
-    });
+    // Total Produk
+    const totalProduk = await prisma.produk.count()
 
-    let produkTerlaris = '-';
+    // Total Transaksi
+    const totalOrder = await prisma.transaksi.count()
+
+    // Total Pendapatan
+    const totalSalesAggregate = await prisma.transaksi.aggregate({
+      _sum: { total_harga: true }
+    })
+    const totalSales = totalSalesAggregate._sum.total_harga || 0
+
+    // Produk Terlaris
+    let produkTerlaris = '-'
 
     const produkTerlarisGroup = await prisma.transaksi.groupBy({
       by: ['id_produk'],
       _count: { id_produk: true },
       orderBy: { _count: { id_produk: 'desc' } },
       take: 1
-    });
+    })
 
-    if (produkTerlarisGroup.length > 0) {
+    if (produkTerlarisGroup.length > 0 && produkTerlarisGroup[0].id_produk) {
       const produk = await prisma.produk.findUnique({
         where: { id_produk: produkTerlarisGroup[0].id_produk },
         select: { nama_produk: true }
-      });
+      })
 
-      produkTerlaris = produk?.nama_produk || '-';
+      if (produk?.nama_produk) {
+        produkTerlaris = produk.nama_produk
+      }
     }
 
+    // Grafik Penjualan per Tanggal
+    const transaksiPerTanggal = await prisma.transaksi.groupBy({
+      by: ['tanggal'],
+      _sum: { total_harga: true },
+      orderBy: { tanggal: 'asc' },
+    })
+
+    const grafikData = transaksiPerTanggal.map(item => ({
+      tanggal: item.tanggal.toISOString().split('T')[0], // Format YYYY-MM-DD
+      total: item._sum.total_harga || 0,
+    }))
+
+    // Return hasil
     return new Response(JSON.stringify({
       totalProduk,
       totalOrder,
-      totalSales: totalSales._sum.total_harga || 0,
+      totalSales,
       produkTerlaris,
+      grafikData,
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
-    });
+    })
+
   } catch (error) {
-    console.error('Error in /api/admin-metric:', error);
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500 });
+    console.error('Error in /api/admin-metric:', error)
+    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+      status: 500
+    })
   }
 }

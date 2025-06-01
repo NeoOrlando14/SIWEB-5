@@ -1,7 +1,17 @@
 'use client';
+
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ResponsiveContainer
+} from 'recharts';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -47,51 +57,22 @@ export default function AdminDashboard() {
       <div className="w-16 bg-gradient-to-b from-[#351c1c] via-[#44221b] to-[#291510] flex flex-col items-center py-4 space-y-8 text-xl">
         <span title="Menu" className="text-2xl">☰</span>
 
-        <button
-          title="Dashboard"
-          onClick={() => router.push('/admin-dashboard')}
-          className={iconClasses('/admin-dashboard')}
-        >
+        <button title="Dashboard" onClick={() => router.push('/admin-dashboard')} className={iconClasses('/admin-dashboard')}>
           📊
         </button>
-
-        <button
-          title="Orders"
-          onClick={() => router.push('/admin-product')}
-          className={iconClasses('/admin-product')}
-        >
+        <button title="Orders" onClick={() => router.push('/admin-product')} className={iconClasses('/admin-product')}>
           📦
         </button>
-
-        <button
-          title="Users"
-          onClick={() => router.push('/admin-users')}
-          className={iconClasses('/admin-users')}
-        >
+        <button title="Users" onClick={() => router.push('/admin-users')} className={iconClasses('/admin-users')}>
           👤
         </button>
-
-        <button
-          title="Gifts"
-          onClick={() => router.push('/admin-gifts')}
-          className={iconClasses('/admin-gifts')}
-        >
+        <button title="Gifts" onClick={() => router.push('/admin-gifts')} className={iconClasses('/admin-gifts')}>
           🎁
         </button>
-
-        <button
-          title="Customers"
-          onClick={() => router.push('/admin-member')}
-          className={iconClasses('/admin-member')}
-        >
+        <button title="Customers" onClick={() => router.push('/admin-member')} className={iconClasses('/admin-member')}>
           👥
         </button>
-
-        <button
-          title="Settings"
-          onClick={() => router.push('/admin-settings')}
-          className={iconClasses('/admin-settings')}
-        >
+        <button title="Settings" onClick={() => router.push('/admin-settings')} className={iconClasses('/admin-settings')}>
           ⚙️
         </button>
       </div>
@@ -113,37 +94,48 @@ export default function AdminDashboard() {
         {error && <p className="text-red-700 font-bold">Error: {error}</p>}
 
         {metrics && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-pink-300 text-black p-4 rounded-xl">
-              <p>Total Produk</p>
-              <h2 className="text-2xl font-bold">{metrics.totalProduk.toLocaleString()}</h2>
-              <p className="text-green-600 text-sm">⬆️ Up from yesterday</p>
+          <>
+            {/* Statistik */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-pink-300 text-black p-4 rounded-xl">
+                <p>Total Produk</p>
+                <h2 className="text-2xl font-bold">{metrics.totalProduk.toLocaleString()}</h2>
+                <p className="text-green-600 text-sm">⬆️ Up from yesterday</p>
+              </div>
+              <div className="bg-yellow-300 text-black p-4 rounded-xl">
+                <p>Total Order</p>
+                <h2 className="text-2xl font-bold">{metrics.totalOrder.toLocaleString()}</h2>
+                <p className="text-green-600 text-sm">⬆️ Up from past week</p>
+              </div>
+              <div className="bg-pink-200 text-black p-4 rounded-xl">
+                <p>Total Sales</p>
+                <h2 className="text-2xl font-bold">Rp {metrics.totalSales.toLocaleString()}</h2>
+                <p className="text-red-600 text-sm">⬇️ Down from yesterday</p>
+              </div>
+              <div className="bg-red-300 text-black p-4 rounded-xl">
+                <p>Produk Terlaris</p>
+                <h2 className="text-2xl font-bold">{metrics.produkTerlaris}</h2>
+                <p className="text-green-600 text-sm">⭐</p>
+              </div>
             </div>
-            <div className="bg-yellow-300 text-black p-4 rounded-xl">
-              <p>Total Order</p>
-              <h2 className="text-2xl font-bold">{metrics.totalOrder.toLocaleString()}</h2>
-              <p className="text-green-600 text-sm">⬆️ Up from past week</p>
-            </div>
-            <div className="bg-pink-200 text-black p-4 rounded-xl">
-              <p>Total Sales</p>
-              <h2 className="text-2xl font-bold">Rp {metrics.totalSales.toLocaleString()}</h2>
-              <p className="text-red-600 text-sm">⬇️ Down from yesterday</p>
-            </div>
-            <div className="bg-red-300 text-black p-4 rounded-xl">
-              <p>Produk Terlaris</p>
-              <h2 className="text-2xl font-bold">{metrics.produkTerlaris}</h2>
-              <p className="text-green-600 text-sm">⭐</p>
-            </div>
-          </div>
-        )}
 
-        {/* Chart Placeholder */}
-        <div className="bg-pink-300 rounded-xl p-4">
-          <h2 className="text-xl font-bold mb-2">Sales Details</h2>
-          <div className="bg-pink-200 rounded-md h-48 flex items-center justify-center text-black">
-            <span>Grafik Penjualan (placeholder)</span>
-          </div>
-        </div>
+            {/* Grafik Penjualan */}
+            <div className="bg-pink-300 rounded-xl p-4">
+              <h2 className="text-xl font-bold mb-2 text-black">Grafik Penjualan</h2>
+              <div className="bg-white rounded-md h-64 p-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={metrics.grafikData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="tanggal" stroke="#000" />
+                    <YAxis stroke="#000" />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="total" stroke="#ef4444" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Footer */}
         <footer className="mt-6 text-center text-sm text-black">

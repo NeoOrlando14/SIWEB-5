@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.0.0",
     "@prisma/client": "^6.8.2",
     "chart.js": "^4.4.9",
     "lucide-react": "^0.488.0",
