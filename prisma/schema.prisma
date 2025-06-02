@@ -10,6 +10,10 @@ datasource db {
 model Produk {
   id        Int         @id @default(autoincrement())
   nama      String
+  harga     Int         @default(0)
+  image     String      @default("default.jpg")
+  rating    Int         @default(5)
+  reviews   Int         @default(0)
   transaksi Transaksi[]
 }
 

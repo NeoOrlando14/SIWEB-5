@@ -6,12 +6,15 @@ import { useRouter, usePathname } from 'next/navigation';
 import {
   LineChart,
   Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Tooltip,
   CartesianGrid,
   ResponsiveContainer
 } from 'recharts';
+
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -122,20 +125,48 @@ export default function AdminDashboard() {
             </div>
 
             {/* Grafik Penjualan */}
-            <div className="bg-pink-300 rounded-xl p-4">
-              <h2 className="text-xl font-bold mb-2 text-black">Grafik Penjualan</h2>
-              <div className="bg-white rounded-md h-64 p-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={metrics.grafikData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="tanggal" stroke="#000" />
-                    <YAxis stroke="#000" />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="total" stroke="#ef4444" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+<div className="bg-pink-300 rounded-xl p-4">
+  <h2 className="text-xl font-bold mb-4 text-black">Grafik Penjualan</h2>
+
+  {/* Grafik Garis */}
+  <div className="bg-white rounded-md h-64 p-2 mb-6">
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart data={metrics.grafikData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+        <defs>
+          <linearGradient id="lineColor" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ec4899" stopOpacity={0.9} />
+            <stop offset="100%" stopColor="#fce7f3" stopOpacity={0.2} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+        <XAxis dataKey="tanggal" stroke="#000" />
+        <YAxis stroke="#000" />
+        <Tooltip contentStyle={{ backgroundColor: '#fce7f3', borderColor: '#ec4899' }} />
+        <Line
+          type="monotone"
+          dataKey="total"
+          stroke="#ec4899"
+          strokeWidth={3}
+          dot={{ r: 4, stroke: '#ec4899', strokeWidth: 2, fill: '#fff' }}
+          activeDot={{ r: 6 }}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  </div>
+
+  {/* Grafik Batang */}
+  <div className="bg-white rounded-md h-64 p-2">
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart data={metrics.grafikData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+        <XAxis dataKey="tanggal" stroke="#000" />
+        <YAxis stroke="#000" />
+        <Tooltip contentStyle={{ backgroundColor: '#fce7f3', borderColor: '#f59e0b' }} />
+        <Bar dataKey="total" fill="#f59e0b" radius={[6, 6, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  </div>
+</div>
           </>
         )}
 

@@ -7,12 +7,9 @@ export default function AdminProductPage() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // cek admin
   useEffect(() => {
     const isAdmin = localStorage.getItem('isAdmin');
-    if (!isAdmin) {
-      router.push('/login');
-    }
+    if (!isAdmin) router.push('/login');
   }, [router]);
 
   const iconClasses = (targetPath) =>
@@ -20,115 +17,81 @@ export default function AdminProductPage() {
       pathname === targetPath ? 'bg-white text-pink-600 scale-110' : 'hover:bg-pink-200 text-white'
     }`;
 
-  // state produk dan form input
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      name: 'Kue kelinci',
-      price: 'Rp.5.000',
-      rating: 4,
-      reviews: 113,
-      image: 'Labubucake.png',
-    },
-    {
-      id: 2,
-      name: 'Kelinci cewe',
-      price: 'Rp.5.000',
-      rating: 4,
-      reviews: 24,
-      image: 'Labubucake.png',
-    },
-    {
-      id: 3,
-      name: 'Headphone kelinci',
-      price: 'Rp.5.000',
-      rating: 4,
-      reviews: 24,
-      image: 'Labubucake.png',
-    },
-    {
-      id: 4,
-      name: 'Buahh Beruang',
-      price: 'Rp.5.000',
-      rating: 5,
-      reviews: 334,
-      image: 'bearcake.png',
-    },
-    {
-      id: 5,
-      name: 'Cewe beruang',
-      price: 'Rp.5.000',
-      rating: 5,
-      reviews: 94,
-      image: 'bearcake.png',
-    },
-    {
-      id: 6,
-      name: 'Bearuang Headphone',
-      price: 'Rp.5.000',
-      rating: 5,
-      reviews: 94,
-      image: 'bearcake.png',
-    },
-  ]);
-
+  const [products, setProducts] = useState([]);
   const [search, setSearch] = useState('');
-  const [newProduct, setNewProduct] = useState({ name: '', price: '', image: '', rating: 5, reviews: 0 });
-
-  // state untuk edit product
+  const [newProduct, setNewProduct] = useState({
+    nama: '',
+    harga: 0,
+    image: '',
+    rating: 5,
+    reviews: 0,
+  });
   const [editProductId, setEditProductId] = useState(null);
-  const [editFormData, setEditFormData] = useState({ name: '', price: '', image: '' });
+  const [editFormData, setEditFormData] = useState({
+    nama: '',
+    harga: 0,
+    image: '',
+    rating: 5,
+    reviews: 0,
+  });
 
-  // Filter produk berdasarkan search
+  // Fetch data dari database (via API)
+  const fetchProducts = async () => {
+    const res = await fetch('/api/admin-product');
+    const data = await res.json();
+    setProducts(data);
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
   const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
+    p.nama.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Tambah produk baru
-  const handleAddProduct = () => {
-    if (!newProduct.name || !newProduct.price || !newProduct.image) {
-      alert('Mohon isi semua data produk baru!');
-      return;
-    }
-    const newId = products.length ? Math.max(...products.map((p) => p.id)) + 1 : 1;
-    setProducts([...products, { ...newProduct, id: newId }]);
-    setNewProduct({ name: '', price: '', image: '', rating: 5, reviews: 0 });
+  const handleAddProduct = async () => {
+    const res = await fetch('/api/admin-product', {
+      method: 'POST',
+      body: JSON.stringify(newProduct),
+    });
+    const result = await res.json();
+    setProducts([...products, result]);
+    setNewProduct({ nama: '', harga: 0, image: '', rating: 5, reviews: 0 });
   };
 
-  // Hapus produk
-  const handleDeleteProduct = (id) => {
-    if (confirm('Yakin ingin menghapus produk ini?')) {
-      setProducts(products.filter((p) => p.id !== id));
-      if (editProductId === id) setEditProductId(null);
-    }
+  const handleDeleteProduct = async (id) => {
+    if (!confirm('Yakin ingin menghapus produk ini?')) return;
+
+    await fetch('/api/admin-product', {
+      method: 'DELETE',
+      body: JSON.stringify({ id }),
+    });
+
+    setProducts(products.filter((p) => p.id !== id));
   };
 
-  // Mulai edit
   const handleEditClick = (product) => {
     setEditProductId(product.id);
     setEditFormData({
-      name: product.name,
-      price: product.price,
+      nama: product.nama,
+      harga: product.harga,
       image: product.image,
+      rating: product.rating,
+      reviews: product.reviews,
     });
   };
 
-  // Batalkan edit
-  const handleCancelEdit = () => {
-    setEditProductId(null);
-  };
+  const handleCancelEdit = () => setEditProductId(null);
 
-  // Simpan edit
-  const handleSaveEdit = (id) => {
-    if (!editFormData.name || !editFormData.price || !editFormData.image) {
-      alert('Mohon isi semua data produk!');
-      return;
-    }
-    setProducts(
-      products.map((p) =>
-        p.id === id ? { ...p, ...editFormData } : p
-      )
-    );
+  const handleSaveEdit = async (id) => {
+    const res = await fetch('/api/admin-product', {
+      method: 'PUT',
+      body: JSON.stringify({ id, ...editFormData }),
+    });
+
+    const updated = await res.json();
+    setProducts(products.map((p) => (p.id === id ? updated : p)));
     setEditProductId(null);
   };
 
@@ -140,7 +103,7 @@ export default function AdminProductPage() {
         <button title="Dashboard" onClick={() => router.push('/admin-dashboard')} className={iconClasses('/admin-dashboard')}>📊</button>
         <button title="Product" onClick={() => router.push('/admin-product')} className={iconClasses('/admin-product')}>📦</button>
         <button title="Users" onClick={() => router.push('/admin-qcontact')} className={iconClasses('/admin-qcontact')}>👤</button>
-        <button title="stock" onClick={() => router.push('/admin-stock')} className={iconClasses('/admin-stock')}>🎁</button>
+        <button title="Stock" onClick={() => router.push('/admin-stock')} className={iconClasses('/admin-stock')}>🎁</button>
         <button title="Customers" onClick={() => router.push('/admin-member')} className={iconClasses('/admin-member')}>👥</button>
         <button title="Settings" onClick={() => router.push('/admin-settings')} className={iconClasses('/admin-settings')}>⚙️</button>
       </div>
@@ -158,20 +121,19 @@ export default function AdminProductPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-
           <input
             type="text"
             placeholder="Nama produk"
             className="p-2 rounded border text-black"
-            value={newProduct.name}
-            onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+            value={newProduct.nama}
+            onChange={(e) => setNewProduct({ ...newProduct, nama: e.target.value })}
           />
           <input
-            type="text"
+            type="number"
             placeholder="Harga"
             className="p-2 rounded border text-black"
-            value={newProduct.price}
-            onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+            value={newProduct.harga}
+            onChange={(e) => setNewProduct({ ...newProduct, harga: Number(e.target.value) })}
           />
           <input
             type="text"
@@ -190,76 +152,59 @@ export default function AdminProductPage() {
 
         {/* Daftar Produk */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProducts.map((product) => (
-            <div key={product.id} className="bg-white rounded-lg overflow-hidden shadow-lg">
-              <img src={product.image} alt={product.name} className="w-full h-48 object-cover" />
+          {filteredProducts.map((product) => {
+            const rating = Math.min(5, Math.max(0, Number(product.rating) || 0));
+            const reviews = product.reviews || 0;
 
-              <div className="bg-purple-900 text-white p-4">
-                {editProductId === product.id ? (
-                  <>
-                    <input
-                      type="text"
-                      className="w-full mb-2 p-1 rounded text-black"
-                      value={editFormData.name}
-                      onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                      placeholder="Nama produk"
-                    />
-                    <input
-                      type="text"
-                      className="w-full mb-2 p-1 rounded text-black"
-                      value={editFormData.price}
-                      onChange={(e) => setEditFormData({ ...editFormData, price: e.target.value })}
-                      placeholder="Harga"
-                    />
-                    <input
-                      type="text"
-                      className="w-full mb-2 p-1 rounded text-black"
-                      value={editFormData.image}
-                      onChange={(e) => setEditFormData({ ...editFormData, image: e.target.value })}
-                      placeholder="URL Gambar"
-                    />
-                    <div className="flex justify-between mt-2">
-                      <button
-                        onClick={() => handleSaveEdit(product.id)}
-                        className="bg-white text-purple-900 font-semibold px-3 py-1 rounded hover:bg-purple-100 text-sm"
-                      >
-                        Simpan
-                      </button>
-                      <button
-                        onClick={handleCancelEdit}
-                        className="bg-red-500 text-white font-semibold px-3 py-1 rounded hover:bg-red-600 text-sm"
-                      >
-                        Batal
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <h2 className="font-semibold text-lg">{product.name}</h2>
-                    <p>{product.price}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      {'★'.repeat(product.rating)}{'☆'.repeat(5 - product.rating)}
-                      <span className="text-sm">({product.reviews})</span>
-                    </div>
-                    <div className="flex justify-between mt-4">
-                      <button
-                        onClick={() => handleEditClick(product)}
-                        className="bg-white text-purple-900 font-semibold px-3 py-1 rounded hover:bg-purple-100 text-sm"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteProduct(product.id)}
-                        className="bg-red-500 text-white font-semibold px-3 py-1 rounded hover:bg-red-600 text-sm"
-                      >
-                        Hapus
-                      </button>
-                    </div>
-                  </>
-                )}
+            return (
+              <div key={product.id} className="bg-white rounded-lg overflow-hidden shadow-lg">
+                <img src={product.image} alt={product.nama} className="w-full h-48 object-cover" />
+                <div className="bg-purple-900 text-white p-4">
+                  {editProductId === product.id ? (
+                    <>
+                      <input
+                        type="text"
+                        className="w-full mb-2 p-1 rounded text-black"
+                        value={editFormData.nama}
+                        onChange={(e) => setEditFormData({ ...editFormData, nama: e.target.value })}
+                      />
+                      <input
+                        type="number"
+                        className="w-full mb-2 p-1 rounded text-black"
+                        value={editFormData.harga}
+                        onChange={(e) => setEditFormData({ ...editFormData, harga: Number(e.target.value) })}
+                      />
+                      <input
+                        type="text"
+                        className="w-full mb-2 p-1 rounded text-black"
+                        value={editFormData.image}
+                        onChange={(e) => setEditFormData({ ...editFormData, image: e.target.value })}
+                      />
+                      <div className="flex justify-between mt-2">
+                        <button onClick={() => handleSaveEdit(product.id)} className="bg-white text-purple-900 font-semibold px-3 py-1 rounded hover:bg-purple-100 text-sm">Simpan</button>
+                        <button onClick={handleCancelEdit} className="bg-red-500 text-white font-semibold px-3 py-1 rounded hover:bg-red-600 text-sm">Batal</button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <h2 className="font-semibold text-lg">{product.nama}</h2>
+                      <p>Rp {product.harga.toLocaleString()}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-yellow-400">
+                          {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}
+                        </span>
+                        <span className="text-sm text-white">({reviews} review)</span>
+                      </div>
+                      <div className="flex justify-between mt-4">
+                        <button onClick={() => handleEditClick(product)} className="bg-white text-purple-900 font-semibold px-3 py-1 rounded hover:bg-purple-100 text-sm">Edit</button>
+                        <button onClick={() => handleDeleteProduct(product.id)} className="bg-red-500 text-white font-semibold px-3 py-1 rounded hover:bg-red-600 text-sm">Hapus</button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {filteredProducts.length === 0 && (
             <p className="text-black col-span-full text-center mt-10">Produk tidak ditemukan.</p>
@@ -267,7 +212,7 @@ export default function AdminProductPage() {
         </div>
 
         <footer className="mt-6 text-center text-sm text-black">
-          ©Rangga Store Copyright © 2023 - Developed by KSI ULAY. Powered by Moodle
+          © Rangga Store 2023 - Developed by KSI ULAY. Powered by Neon
         </footer>
       </div>
     </div>
