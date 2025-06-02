@@ -1,19 +1,23 @@
-model Produk {
-  id        Int      @id @default(autoincrement())
-  nama      String
-  harga     Int
-  stok      Int
-  createdAt DateTime @default(now())
+generator client {
+  provider = "prisma-client-js"
+}
 
-  transaksi Transaksi[] // relasi balik ke Transaksi
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Produk {
+  id        Int         @id @default(autoincrement())
+  nama      String
+  transaksi Transaksi[]
 }
 
 model Transaksi {
-  id         Int      @id @default(autoincrement())
-  produkId   Int
-  jumlah     Int
-  totalHarga Int
-  createdAt  DateTime @default(now())
-
-  produk Produk @relation(fields: [produkId], references: [id])
+  id           Int      @id @default(autoincrement())
+  produkId     Int
+  nama_pembeli String
+  tanggal      DateTime @default(now())
+  total_harga  Int
+  produk       Produk   @relation(fields: [produkId], references: [id])
 }

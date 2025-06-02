@@ -1,68 +1,106 @@
-import { prisma } from '../../../lib/prisma'
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export async function GET() {
   try {
-    // Total Produk
-    const totalProduk = await prisma.produk.count()
+    // Total produk
+    const totalProduk = await prisma.produk.count();
 
-    // Total Transaksi
-    const totalOrder = await prisma.transaksi.count()
+    // Total order (transaksi)
+    const totalOrder = await prisma.transaksi.count();
 
-    // Total Pendapatan
-    const totalSalesAggregate = await prisma.transaksi.aggregate({
-      _sum: { total_harga: true }
-    })
-    const totalSales = totalSalesAggregate._sum.total_harga || 0
+    // Total sales (jumlah total_harga dari semua transaksi)
+    const totalSalesAgg = await prisma.transaksi.aggregate({
+      _sum: {
+        total_harga: true,
+      },
+    });
+    const totalSales = totalSalesAgg._sum.total_harga || 0;
 
-    // Produk Terlaris
-    let produkTerlaris = '-'
+    // Produk terlaris (produk dengan transaksi terbanyak)
+    const produkTerlarisData = await prisma.transaksi.groupBy({
+      by: ['produkId'],
+      _count: {
+        produkId: true,
+      },
+      orderBy: {
+        _count: {
+          produkId: 'desc',
+        },
+      },
+      take: 1,
+    });
 
-    const produkTerlarisGroup = await prisma.transaksi.groupBy({
-      by: ['id_produk'],
-      _count: { id_produk: true },
-      orderBy: { _count: { id_produk: 'desc' } },
-      take: 1
-    })
-
-    if (produkTerlarisGroup.length > 0 && produkTerlarisGroup[0].id_produk) {
+    let produkTerlaris = '-';
+    if (produkTerlarisData.length > 0) {
       const produk = await prisma.produk.findUnique({
-        where: { id_produk: produkTerlarisGroup[0].id_produk },
-        select: { nama_produk: true }
-      })
-
-      if (produk?.nama_produk) {
-        produkTerlaris = produk.nama_produk
-      }
+        where: { id: produkTerlarisData[0].produkId },
+      });
+      produkTerlaris = produk?.nama || '-';
     }
 
-    // Grafik Penjualan per Tanggal
-    const transaksiPerTanggal = await prisma.transaksi.groupBy({
-      by: ['tanggal'],
-      _sum: { total_harga: true },
-      orderBy: { tanggal: 'asc' },
-    })
+    // Grafik data penjualan: total transaksi per hari dalam 7 hari terakhir
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6); // termasuk hari ini (7 hari)
 
-    const grafikData = transaksiPerTanggal.map(item => ({
-      tanggal: item.tanggal.toISOString().split('T')[0], // Format YYYY-MM-DD
-      total: item._sum.total_harga || 0,
-    }))
+    // Ambil transaksi dari 7 hari terakhir
+    const transaksi7hari = await prisma.transaksi.findMany({
+      where: {
+        tanggal: {
+          gte: sevenDaysAgo,
+        },
+      },
+      orderBy: {
+        tanggal: 'asc',
+      },
+    });
 
-    // Return hasil
-    return new Response(JSON.stringify({
-      totalProduk,
-      totalOrder,
-      totalSales,
-      produkTerlaris,
-      grafikData,
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    })
+    // Buat objek map tanggal => total_harga
+    const dailyTotals = {};
 
+    // Inisialisasi semua tanggal 7 hari terakhir dengan total 0
+    for (let i = 0; i < 7; i++) {
+      const d = new Date();
+      d.setDate(sevenDaysAgo.getDate() + i);
+      const dateStr = d.toISOString().slice(0, 10); // format yyyy-mm-dd
+      dailyTotals[dateStr] = 0;
+    }
+
+    // Hitung total per hari
+    transaksi7hari.forEach((tr) => {
+      const dateStr = tr.tanggal.toISOString().slice(0, 10);
+      if (dailyTotals[dateStr] !== undefined) {
+        dailyTotals[dateStr] += tr.total_harga;
+      }
+    });
+
+    // Ubah ke array sesuai format grafik
+    const grafikData = Object.entries(dailyTotals).map(([tanggal, total]) => ({
+      tanggal,
+      total,
+    }));
+
+    return new Response(
+      JSON.stringify({
+        totalProduk,
+        totalOrder,
+        totalSales,
+        produkTerlaris,
+        grafikData,
+      }),
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
   } catch (error) {
-  console.error('🔥 ERROR di /api/admin-metric:', error); // tampilkan semua error
-  return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
-    status: 500
-    })
+    console.error('Error API admin-metric:', error);
+    return new Response(
+      JSON.stringify({ error: 'Internal Server Error' }),
+      { status: 500 }
+    );
   }
 }

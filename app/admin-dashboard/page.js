@@ -21,9 +21,11 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Fungsi fetch data metrics dari API
   useEffect(() => {
     const fetchMetrics = async () => {
       if (typeof window !== 'undefined') {
+        // Cek autentikasi admin, contoh dari localStorage
         const isAdmin = localStorage.getItem('isAdmin');
         if (!isAdmin) {
           router.push('/login');
