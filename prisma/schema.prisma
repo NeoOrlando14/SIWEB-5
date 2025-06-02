@@ -25,3 +25,14 @@ model Transaksi {
   total_harga  Int
   produk       Produk   @relation(fields: [produkId], references: [id])
 }
+
+model Member {
+  id        Int     @id @default(autoincrement())
+  firstName String
+  lastName  String
+  email     String
+  phone     String
+  position  String
+  address   String
+  gender    String
+}

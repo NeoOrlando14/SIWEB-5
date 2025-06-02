@@ -7,17 +7,8 @@ export default function AdminProductPage() {
   const router = useRouter();
   const pathname = usePathname();
 
-  useEffect(() => {
-    const isAdmin = localStorage.getItem('isAdmin');
-    if (!isAdmin) router.push('/login');
-  }, [router]);
-
-  const iconClasses = (targetPath) =>
-    `text-xl p-2 rounded-lg transition-all duration-300 cursor-pointer ${
-      pathname === targetPath ? 'bg-white text-pink-600 scale-110' : 'hover:bg-pink-200 text-white'
-    }`;
-
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [newProduct, setNewProduct] = useState({
     nama: '',
@@ -35,11 +26,26 @@ export default function AdminProductPage() {
     reviews: 0,
   });
 
-  // Fetch data dari database (via API)
+  useEffect(() => {
+    const isAdmin = localStorage.getItem('isAdmin');
+    if (!isAdmin) router.push('/login');
+  }, [router]);
+
+  const iconClasses = (targetPath) =>
+    `text-xl p-2 rounded-lg transition-all duration-300 cursor-pointer ${
+      pathname === targetPath ? 'bg-white text-pink-600 scale-110' : 'hover:bg-pink-200 text-white'
+    }`;
+
   const fetchProducts = async () => {
-    const res = await fetch('/api/admin-product');
-    const data = await res.json();
-    setProducts(data);
+    try {
+      const res = await fetch('/api/admin-product');
+      const data = await res.json();
+      setProducts(data);
+    } catch (error) {
+      console.error('Gagal memuat produk:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -62,12 +68,10 @@ export default function AdminProductPage() {
 
   const handleDeleteProduct = async (id) => {
     if (!confirm('Yakin ingin menghapus produk ini?')) return;
-
     await fetch('/api/admin-product', {
       method: 'DELETE',
       body: JSON.stringify({ id }),
     });
-
     setProducts(products.filter((p) => p.id !== id));
   };
 
@@ -89,7 +93,6 @@ export default function AdminProductPage() {
       method: 'PUT',
       body: JSON.stringify({ id, ...editFormData }),
     });
-
     const updated = await res.json();
     setProducts(products.map((p) => (p.id === id ? updated : p)));
     setEditProductId(null);
@@ -152,61 +155,65 @@ export default function AdminProductPage() {
 
         {/* Daftar Produk */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProducts.map((product) => {
-            const rating = Math.min(5, Math.max(0, Number(product.rating) || 0));
-            const reviews = product.reviews || 0;
+          {loading
+            ? Array(6).fill(0).map((_, i) => (
+                <div key={i} className="animate-pulse bg-white rounded-lg h-64 shadow-lg" />
+              ))
+            : filteredProducts.map((product) => {
+                const rating = Math.min(5, Math.max(0, Number(product.rating) || 0));
+                const reviews = product.reviews || 0;
 
-            return (
-              <div key={product.id} className="bg-white rounded-lg overflow-hidden shadow-lg">
-                <img src={product.image} alt={product.nama} className="w-full h-48 object-cover" />
-                <div className="bg-purple-900 text-white p-4">
-                  {editProductId === product.id ? (
-                    <>
-                      <input
-                        type="text"
-                        className="w-full mb-2 p-1 rounded text-black"
-                        value={editFormData.nama}
-                        onChange={(e) => setEditFormData({ ...editFormData, nama: e.target.value })}
-                      />
-                      <input
-                        type="number"
-                        className="w-full mb-2 p-1 rounded text-black"
-                        value={editFormData.harga}
-                        onChange={(e) => setEditFormData({ ...editFormData, harga: Number(e.target.value) })}
-                      />
-                      <input
-                        type="text"
-                        className="w-full mb-2 p-1 rounded text-black"
-                        value={editFormData.image}
-                        onChange={(e) => setEditFormData({ ...editFormData, image: e.target.value })}
-                      />
-                      <div className="flex justify-between mt-2">
-                        <button onClick={() => handleSaveEdit(product.id)} className="bg-white text-purple-900 font-semibold px-3 py-1 rounded hover:bg-purple-100 text-sm">Simpan</button>
-                        <button onClick={handleCancelEdit} className="bg-red-500 text-white font-semibold px-3 py-1 rounded hover:bg-red-600 text-sm">Batal</button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <h2 className="font-semibold text-lg">{product.nama}</h2>
-                      <p>Rp {product.harga.toLocaleString()}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-yellow-400">
-                          {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}
-                        </span>
-                        <span className="text-sm text-white">({reviews} review)</span>
-                      </div>
-                      <div className="flex justify-between mt-4">
-                        <button onClick={() => handleEditClick(product)} className="bg-white text-purple-900 font-semibold px-3 py-1 rounded hover:bg-purple-100 text-sm">Edit</button>
-                        <button onClick={() => handleDeleteProduct(product.id)} className="bg-red-500 text-white font-semibold px-3 py-1 rounded hover:bg-red-600 text-sm">Hapus</button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+                return (
+                  <div key={product.id} className="bg-white rounded-lg overflow-hidden shadow-lg">
+                    <img src={product.image} alt={product.nama} className="w-full h-48 object-cover" />
+                    <div className="bg-purple-900 text-white p-4">
+                      {editProductId === product.id ? (
+                        <>
+                          <input
+                            type="text"
+                            className="w-full mb-2 p-1 rounded text-black"
+                            value={editFormData.nama}
+                            onChange={(e) => setEditFormData({ ...editFormData, nama: e.target.value })}
+                          />
+                          <input
+                            type="number"
+                            className="w-full mb-2 p-1 rounded text-black"
+                            value={editFormData.harga}
+                            onChange={(e) => setEditFormData({ ...editFormData, harga: Number(e.target.value) })}
+                          />
+                          <input
+                            type="text"
+                            className="w-full mb-2 p-1 rounded text-black"
+                            value={editFormData.image}
+                            onChange={(e) => setEditFormData({ ...editFormData, image: e.target.value })}
+                          />
+                          <div className="flex justify-between mt-2">
+                            <button onClick={() => handleSaveEdit(product.id)} className="bg-white text-purple-900 font-semibold px-3 py-1 rounded hover:bg-purple-100 text-sm">Simpan</button>
+                            <button onClick={handleCancelEdit} className="bg-red-500 text-white font-semibold px-3 py-1 rounded hover:bg-red-600 text-sm">Batal</button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <h2 className="font-semibold text-lg">{product.nama}</h2>
+                          <p>Rp {product.harga.toLocaleString()}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-yellow-400">
+                              {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}
+                            </span>
+                            <span className="text-sm text-white">({reviews} review)</span>
+                          </div>
+                          <div className="flex justify-between mt-4">
+                            <button onClick={() => handleEditClick(product)} className="bg-white text-purple-900 font-semibold px-3 py-1 rounded hover:bg-purple-100 text-sm">Edit</button>
+                            <button onClick={() => handleDeleteProduct(product.id)} className="bg-red-500 text-white font-semibold px-3 py-1 rounded hover:bg-red-600 text-sm">Hapus</button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
 
-          {filteredProducts.length === 0 && (
+          {!loading && filteredProducts.length === 0 && (
             <p className="text-black col-span-full text-center mt-10">Produk tidak ditemukan.</p>
           )}
         </div>
