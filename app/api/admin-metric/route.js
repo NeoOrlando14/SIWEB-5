@@ -60,9 +60,9 @@ export async function GET() {
     })
 
   } catch (error) {
-    console.error('Error in /api/admin-metric:', error)
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
-      status: 500
+  console.error('🔥 ERROR di /api/admin-metric:', error); // tampilkan semua error
+  return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+    status: 500
     })
   }
 }
