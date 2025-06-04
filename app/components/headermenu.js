@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FaBars } from 'react-icons/fa';
+import { FaBars, FaTimes } from 'react-icons/fa';
 
 export default function HeaderMenu() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -13,55 +13,46 @@ export default function HeaderMenu() {
     router.push('/login');
   };
 
+  const goTo = (path) => {
+    router.push(path);
+    setMenuOpen(false); // Tutup menu jika mobile
+  };
+
   return (
-    <header className="w-full bg-pink-800 text-white py-4 relative z-10">
+    <header className="w-full bg-pink-800 text-white py-4 z-50 relative shadow-lg">
       <nav className="container mx-auto px-4 flex justify-between items-center">
         {/* Logo dan Judul */}
-        <div  className="flex items-center space-x-3 cursor-pointer"
-  onClick={() => router.push('/home')}>
+        <div
+          className="flex items-center space-x-3 cursor-pointer"
+          onClick={() => goTo('/home')}
+        >
           <img src="/logotoko.png" alt="Logo" className="h-8 w-8 rounded-full" />
           <h1 className="text-xl font-bold">Toko Kue Pak Rangga</h1>
         </div>
 
         {/* Menu Desktop */}
-        <ul className="hidden md:flex space-x-6">
-          <li><a href="#peta" className="hover:text-yellow-300">Maps</a></li>
-          <li><a href="#testimoni" className="hover:text-yellow-300">About</a></li>
-          <li><button onClick={() => router.push('/contact')} className="hover:text-yellow-300">Contact</button></li>
-          <li><button onClick={() => router.push('/shop')} className="hover:text-yellow-300">Shop</button></li>
-          <li><button onClick={handleLogout} className="hover:text-yellow-300">Sign in</button></li>
+        <ul className="hidden md:flex space-x-6 text-sm font-semibold">
+          <li><button onClick={() => goTo('/home#peta')} className="hover:text-yellow-300">Maps</button></li>
+          <li><button onClick={() => goTo('/home#testimoni')} className="hover:text-yellow-300">About</button></li>
+          <li><button onClick={() => goTo('/contact')} className="hover:text-yellow-300">Contact</button></li>
+          <li><button onClick={() => goTo('/shop')} className="hover:text-yellow-300">Shop</button></li>
+          <li><button onClick={handleLogout} className="hover:text-yellow-300">Sign In</button></li>
         </ul>
 
-        {/* Tombol Menu Mobile */}
+        {/* Tombol Burger Menu Mobile */}
         <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-2xl">
-          <FaBars />
+          {menuOpen ? <FaTimes /> : <FaBars />}
         </button>
       </nav>
 
-      {/* Menu Dropdown Mobile */}
+      {/* Menu Mobile */}
       {menuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-gray-700 text-white px-4 py-4 space-y-3">
-          <a href="#peta" className="block w-full text-left hover:text-yellow-300">Maps</a>
-          <a href="#testimoni" className="block w-full text-left hover:text-yellow-300">About</a>
-          <a href="#contact" className="block w-full text-left hover:text-yellow-300">Contact</a>
-          <button
-            onClick={() => router.push('/shop')}
-            className="block w-full text-left hover:text-yellow-300"
-          >
-            Shop
-          </button>
-          <button
-            onClick={() => alert('Account Info')}
-            className="block w-full text-left hover:text-yellow-300"
-          >
-            Account Info
-          </button>
-          <button
-            onClick={handleLogout}
-            className="block w-full text-left hover:text-yellow-300"
-          >
-            Sign Out
-          </button>
+        <div className="md:hidden bg-pink-700 px-6 py-4 space-y-3 text-sm font-semibold">
+          <button onClick={() => goTo('/home#peta')} className="block w-full text-left hover:text-yellow-300">Maps</button>
+          <button onClick={() => goTo('/home#testimoni')} className="block w-full text-left hover:text-yellow-300">About</button>
+          <button onClick={() => goTo('/contact')} className="block w-full text-left hover:text-yellow-300">Contact</button>
+          <button onClick={() => goTo('/shop')} className="block w-full text-left hover:text-yellow-300">Shop</button>
+          <button onClick={handleLogout} className="block w-full text-left hover:text-yellow-300">Sign In</button>
         </div>
       )}
     </header>

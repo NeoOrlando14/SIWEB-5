@@ -41,14 +41,16 @@ export async function GET() {
     }
 
     // Grafik data penjualan: total transaksi per hari dalam 7 hari terakhir
+    const today = new Date();
     const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6); // termasuk hari ini (7 hari)
+    sevenDaysAgo.setDate(today.getDate() - 6); // termasuk hari ini
 
     // Ambil transaksi dari 7 hari terakhir
     const transaksi7hari = await prisma.transaksi.findMany({
       where: {
         tanggal: {
           gte: sevenDaysAgo,
+          lte: today,
         },
       },
       orderBy: {
@@ -56,18 +58,16 @@ export async function GET() {
       },
     });
 
-    // Buat objek map tanggal => total_harga
-    const dailyTotals = {};
-
     // Inisialisasi semua tanggal 7 hari terakhir dengan total 0
+    const dailyTotals = {};
     for (let i = 0; i < 7; i++) {
-      const d = new Date();
+      const d = new Date(sevenDaysAgo);
       d.setDate(sevenDaysAgo.getDate() + i);
       const dateStr = d.toISOString().slice(0, 10); // format yyyy-mm-dd
       dailyTotals[dateStr] = 0;
     }
 
-    // Hitung total per hari
+    // Hitung total penjualan per hari
     transaksi7hari.forEach((tr) => {
       const dateStr = tr.tanggal.toISOString().slice(0, 10);
       if (dailyTotals[dateStr] !== undefined) {
@@ -75,7 +75,7 @@ export async function GET() {
       }
     });
 
-    // Ubah ke array sesuai format grafik
+    // Ubah jadi array untuk grafik
     const grafikData = Object.entries(dailyTotals).map(([tanggal, total]) => ({
       tanggal,
       total,

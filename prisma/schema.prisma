@@ -27,7 +27,6 @@ model Transaksi {
 }
 
 model Member {
-  id        Int     @id @default(autoincrement())
   firstName String
   lastName  String
   email     String
@@ -35,4 +34,5 @@ model Member {
   position  String
   address   String
   gender    String
+  id        Int    @id @default(autoincrement())
 }

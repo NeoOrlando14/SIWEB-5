@@ -45,8 +45,8 @@ export default function AdminSetting() {
 
         <button
           title="Gifts"
-          onClick={() => router.push('/admin-stock')}
-          className={iconClasses('/admin-gifts')}
+          onClick={() => router.push('/admin-transaksi')}
+          className={iconClasses('/admin-transaksi')}
         >
           🎁
         </button>

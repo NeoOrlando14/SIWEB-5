@@ -86,7 +86,7 @@ export default function AdminMemberPage() {
         <button title="Dashboard" onClick={() => router.push('/admin-dashboard')}>📊</button>
         <button title="Product" onClick={() => router.push('/admin-product')}>📦</button>
         <button title="Contact" onClick={() => router.push('/admin-qcontact')}>👤</button>
-        <button title="Stock" onClick={() => router.push('/admin-stock')}>🎁</button>
+        <button title="Stock" onClick={() => router.push('/admin-transaksi')}>🎁</button>
         <button title="Member" onClick={() => router.push('/admin-member')}>👥</button>
         <button title="Settings" onClick={() => router.push('/admin-settings')}>⚙️</button>
       </div>

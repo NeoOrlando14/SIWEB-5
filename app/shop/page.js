@@ -1,26 +1,35 @@
 'use client';
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import HeaderMenu from '../components/headermenu';
 
-const allProducts = [
-  { id: 1, name: 'Cake Bunny', price: 5000, image: '/labubucake.png' },
-  { id: 2, name: 'Cake Bear', price: 5000, image: '/bearcake.png' },
-  { id: 3, name: 'Cake Bunny', price: 10000, image: '/labubucake.png' },
-  { id: 4, name: 'Cake Bear', price: 10000, image: '/bearcake.png' },
-  { id: 5, name: 'Cake Bunny', price: 15000, image: '/labubucake.png' },
-  { id: 6, name: 'Cake Bear', price: 15000, image: '/bearcake.png' },
-  { id: 7, name: 'Cake Bunny', price: 20000, image: '/labubucake.png' },
-  { id: 8, name: 'Cake Bear', price: 20000, image: '/bearcake.png' },
-  { id: 9, name: 'Cake Bunny', price: 25000, image: '/labubucake.png' },
-  { id: 10, name: 'Cake Bear', price: 25000, image: '/bearcake.png' },
-];
+// Komponen sementara pengganti HeaderMenu jika belum ada
+const HeaderMenu = () => (
+  <div className="bg-pink-500 text-white text-center py-3 text-lg font-semibold">
+    Toko Kue Pak Rangga 🍰
+  </div>
+);
 
 export default function ShopPage() {
+  const [products, setProducts] = useState([]);
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState({});
   const router = useRouter();
+
+  // Ambil data produk dari API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch('/api/products');
+        const data = await res.json();
+        setProducts(data);
+      } catch (error) {
+        console.error('Gagal memuat produk:', error);
+      }
+    };
+    fetchProducts();
+  }, []);
 
   const handleAdd = (product) => {
     setCart((prev) => ({
@@ -38,13 +47,13 @@ export default function ShopPage() {
     });
   };
 
-  const filteredProducts = allProducts.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
+  const filteredProducts = products.filter((p) =>
+    p.nama.toLowerCase().includes(search.toLowerCase())
   );
 
   const totalPrice = Object.entries(cart).reduce((total, [id, qty]) => {
-    const product = allProducts.find((p) => p.id === parseInt(id));
-    return total + (product?.price || 0) * qty;
+    const product = products.find((p) => p.id === parseInt(id));
+    return total + (product?.harga || 0) * qty;
   }, 0);
 
   return (
@@ -56,7 +65,7 @@ export default function ShopPage() {
         <div className="mb-4 flex flex-col sm:flex-row justify-between items-center gap-2">
           <input
             type="text"
-            placeholder="cari......"
+            placeholder="Cari produk..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full sm:w-2/3 px-4 py-2 rounded-full border-2 border-pink-400 focus:outline-none"
@@ -72,17 +81,20 @@ export default function ShopPage() {
         {/* Produk */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {filteredProducts.map((product) => (
-            <div key={product.id} className="bg-white bg-opacity-30 rounded-xl p-4 shadow-lg text-center">
+            <div
+              key={product.id}
+              className="bg-white bg-opacity-30 rounded-xl p-4 shadow-lg text-center"
+            >
               <Image
-                src={product.image}
-                alt={product.name}
+                src={product.image.startsWith('/') ? product.image : '/' + product.image}
+                alt={product.nama}
                 width={100}
                 height={100}
                 className="mx-auto rounded-lg"
               />
-              <p className="text-sm text-gray-700 mt-2">{product.name}</p>
+              <p className="text-sm text-gray-700 mt-2">{product.nama}</p>
               <p className="text-pink-600 font-bold mt-1">
-                Rp.{product.price.toLocaleString()}
+                Rp.{product.harga.toLocaleString()}
               </p>
               <p className="mt-1 text-sm text-gray-600">
                 Jumlah: {cart[product.id] || 0}

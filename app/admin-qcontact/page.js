@@ -21,8 +21,8 @@ export default function AdminContactPage() {
     { id: 1, name: 'Pikachu', email: 'rumiy.bambank@wilds.id', image: 'pika.jpg' },
     { id: 2, name: 'Duane Dean', email: 'rumiy.bambank@wilds.id', image: 'duane.jpg' },
     { id: 3, name: 'Jonathan Barker', email: 'rumiy.bambank@wilds.id', image: 'jona.jpg' },
-    { id: 4, name: 'Dante', email: 'rumiy.bambank@wilds.id', image: 'dante.jpg' },
-    { id: 5, name: 'Fyyyy', email: 'rumiy.bambank@wilds.id', image: 'fy.jpg' },
+    { id: 4, name: 'Erland', email: 'rumiy.bambank@wilds.id', image: 'erland.jpeg' },
+    { id: 5, name: 'Fyyyy', email: 'rumiy.bambank@wilds.id', image: 'fyfy.jpg' },
     { id: 6, name: 'Herzorn', email: 'rumiy.bambank@wilds.id', image: 'hz.jpg' },
     { id: 7, name: 'Neo', email: 'rumiy.bambank@wilds.id', image: 'Neo.jpg' },
     { id: 8, name: 'Dave', email: 'rumiy.bambank@wilds.id', image: 'dv.jpg' },
@@ -80,8 +80,8 @@ export default function AdminContactPage() {
 
         <button
           title="Gifts"
-          onClick={() => router.push('/admin-stock')}
-          className={iconClasses('/admin-gifts')}
+          onClick={() => router.push('/admin-transaksi')}
+          className={iconClasses('/admin-transaksi')}
         >
           🎁
         </button>
