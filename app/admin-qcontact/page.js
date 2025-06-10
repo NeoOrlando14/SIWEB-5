@@ -83,7 +83,7 @@ export default function AdminContactPage() {
           onClick={() => router.push('/admin-transaksi')}
           className={iconClasses('/admin-transaksi')}
         >
-          🎁
+          🧾
         </button>
 
         <button

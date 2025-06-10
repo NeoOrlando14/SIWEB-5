@@ -29,7 +29,7 @@ export default function AdminTransaksiPage() {
     } else {
       fetchData();
     }
-  }, [router]);
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -37,7 +37,6 @@ export default function AdminTransaksiPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       const res = await fetch('/api/admin-transaksi', {
         method: 'POST',
@@ -45,24 +44,41 @@ export default function AdminTransaksiPage() {
         body: JSON.stringify(formData),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const err = await res.json();
-        alert('Gagal menambahkan transaksi: ' + err.error);
+        console.error('Gagal menambahkan:', data.error);
+        alert('Gagal menambahkan transaksi: ' + data.error);
         return;
       }
 
-      // Reset form dan ambil ulang data
       setFormData({ nama_pembeli: '', tanggal: '', produkId: '', total_harga: '' });
       fetchData();
     } catch (err) {
       console.error('Submit error:', err);
-      alert('Terjadi kesalahan saat mengirim data');
+      alert('Terjadi kesalahan saat mengirim data: ' + err.message);
     }
   };
 
   const handleDelete = async (id) => {
-    await fetch(`/api/admin-transaksi/${id}`, { method: 'DELETE' });
-    fetchData();
+    const confirmDelete = confirm('Yakin ingin menghapus transaksi ini?');
+    if (!confirmDelete) return;
+
+    try {
+      const res = await fetch(`/api/admin-transaksi/${id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert('Transaksi berhasil dihapus');
+        fetchData();
+      } else {
+        console.error('Gagal hapus:', data.error);
+      }
+    } catch (error) {
+      console.error('Error saat hapus:', error);
+    }
   };
 
   const filteredTransaksi = transaksi.filter((tx) =>
@@ -131,12 +147,7 @@ export default function AdminTransaksiPage() {
                 <td className="px-4 py-2">{tx.produk?.nama || 'Produk tidak ditemukan'}</td>
                 <td className="px-4 py-2">{tx.total_harga.toLocaleString('id-ID')}</td>
                 <td className="px-4 py-2">
-                  <button
-                    className="text-red-600 hover:underline mr-2"
-                    onClick={() => handleDelete(tx.id)}
-                  >
-                    Hapus
-                  </button>
+                  <button className="text-red-600 hover:underline" onClick={() => handleDelete(tx.id)}>Hapus</button>
                 </td>
               </tr>
             ))}

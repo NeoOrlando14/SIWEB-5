@@ -1,4 +1,4 @@
-import prisma from '../../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 export async function DELETE(req, { params }) {
   try {
@@ -8,11 +8,19 @@ export async function DELETE(req, { params }) {
       where: { id },
     });
 
-    return new Response(JSON.stringify({ message: 'Transaksi deleted' }), { status: 200 });
+    return new Response(JSON.stringify({ message: 'Transaksi deleted' }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json', // ✅ TAMBAH INI
+      },
+    });
   } catch (error) {
     console.error('DELETE Error:', error);
     return new Response(JSON.stringify({ error: 'Failed to delete transaksi' }), {
       status: 500,
+      headers: {
+        'Content-Type': 'application/json', // ✅ TAMBAH INI JUGA
+      },
     });
   }
 }

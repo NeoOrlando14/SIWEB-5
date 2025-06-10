@@ -129,7 +129,7 @@ export default function AdminDashboard() {
         <button title="Dashboard" onClick={() => router.push('/admin-dashboard')} className={iconClasses('/admin-dashboard')}>📊</button>
         <button title="Orders" onClick={() => router.push('/admin-product')} className={iconClasses('/admin-product')}>📦</button>
         <button title="Users" onClick={() => router.push('/admin-qcontact')} className={iconClasses('/admin-qcontact')}>👤</button>
-        <button title="Gifts" onClick={() => router.push('/admin-transaksi')} className={iconClasses('/admin-transaksi')}>🎁</button>
+        <button title="Gifts" onClick={() => router.push('/admin-transaksi')} className={iconClasses('/admin-transaksi')}>🧾</button>
         <button title="Customers" onClick={() => router.push('/admin-member')} className={iconClasses('/admin-member')}>👥</button>
         <button title="Settings" onClick={() => router.push('/admin-settings')} className={iconClasses('/admin-settings')}>⚙️</button>
       </div>

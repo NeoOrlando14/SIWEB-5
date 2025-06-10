@@ -48,7 +48,7 @@ export default function AdminSetting() {
           onClick={() => router.push('/admin-transaksi')}
           className={iconClasses('/admin-transaksi')}
         >
-          🎁
+          🧾
         </button>
 
         <button
