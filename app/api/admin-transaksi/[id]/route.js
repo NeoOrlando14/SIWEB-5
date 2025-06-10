@@ -1,3 +1,5 @@
+import prisma from '../../../../lib/prisma';
+
 export async function DELETE(req, { params }) {
   try {
     const id = parseInt(params.id, 10);
