@@ -1,4 +1,5 @@
 'use client';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaEnvelope, FaLock } from 'react-icons/fa';
@@ -7,29 +8,37 @@ import Link from 'next/link';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isAdminMode, setIsAdminMode] = useState(false);
   const router = useRouter();
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (email === 'pembeli@gmail.com' && password === 'pembeli123') {
+
+    // Login untuk pembeli
+    if (!isAdminMode && email === 'pembeli@gmail.com' && password === 'pembeli123') {
       localStorage.setItem('isLoggedIn', 'true');
       router.push('/home');
-    } else {
+    }
+
+    // Login untuk admin
+    else if (isAdminMode && email === 'admin@gmail.com' && password === 'admin123') {
+      localStorage.setItem('isAdmin', 'true');
+      router.push('/admin-dashboard');
+    }
+
+    // Gagal login
+    else {
       alert('Email atau password salah!');
     }
-  };
-
-  const handleAdminLogin = () => {
-    // Simulasi login admin
-    localStorage.setItem('isAdmin', 'true');
-    router.push('/admin-dashboard');
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#FFD1DC] via-[#FFDEE9] to-[#FFF1F9] flex items-center justify-center p-4">
       <div className="bg-white bg-opacity-80 backdrop-blur-lg shadow-2xl rounded-3xl px-10 py-12 w-full max-w-md text-center">
         <h1 className="text-4xl font-extrabold text-pink-600 mb-2">Welcome</h1>
-        <p className="text-sm text-pink-700 mb-6">Tolong Masukkan Password dan Email anda</p>
+        <p className="text-sm text-pink-700 mb-6">
+          {isAdminMode ? 'Login sebagai admin' : 'Tolong Masukkan Password dan Email anda'}
+        </p>
 
         <form onSubmit={handleLogin} className="space-y-4 text-left">
           <div>
@@ -80,16 +89,12 @@ export default function LoginPage() {
         </div>
 
         <button
-  onClick={() => {
-    localStorage.setItem('isAdmin', 'true');
-    router.push('/admin-dashboard');
-  }}
-  className="mt-4 w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 rounded-full transition shadow-md"
->
-  Login as Admin
-</button>
+          onClick={() => setIsAdminMode(true)}
+          className="mt-4 w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 rounded-full transition shadow-md"
+        >
+          Login as Admin
+        </button>
       </div>
-      
     </div>
   );
 }

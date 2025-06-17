@@ -6,14 +6,14 @@ import { useRouter, usePathname } from 'next/navigation';
 export default function AdminTransaksiPage() {
   const router = useRouter();
   const pathname = usePathname();
+
   const [transaksi, setTransaksi] = useState([]);
   const [search, setSearch] = useState('');
-  const [formData, setFormData] = useState({
-    nama_pembeli: '',
-    tanggal: '',
-    produkId: '',
-    total_harga: '',
-  });
+  const [formData, setFormData] = useState({ nama_pembeli: '' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [editingId, setEditingId] = useState(null);
+  const [trashedTransaksi, setTrashedTransaksi] = useState([]);
+  const itemsPerPage = 5;
 
   const fetchData = () => {
     fetch('/api/admin-transaksi')
@@ -32,130 +32,147 @@ export default function AdminTransaksiPage() {
   }, []);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({ ...formData, nama_pembeli: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const res = await fetch('/api/admin-transaksi', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
+    const restored = trashedTransaksi.find(t => t.nama_pembeli.toLowerCase() === formData.nama_pembeli.toLowerCase());
+    if (!restored) return alert('Tidak ditemukan transaksi sebelumnya untuk nama ini.');
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        console.error('Gagal menambahkan:', data.error);
-        alert('Gagal menambahkan transaksi: ' + data.error);
-        return;
-      }
-
-      setFormData({ nama_pembeli: '', tanggal: '', produkId: '', total_harga: '' });
+    const res = await fetch('/api/admin-transaksi', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nama_pembeli: restored.nama_pembeli,
+        produkId: restored.produkId,
+        total_harga: restored.total_harga,
+        tanggal: new Date().toISOString(),
+      }),
+    });
+    if (res.ok) {
+      alert('Transaksi berhasil dikembalikan.');
+      setFormData({ nama_pembeli: '' });
       fetchData();
-    } catch (err) {
-      console.error('Submit error:', err);
-      alert('Terjadi kesalahan saat mengirim data: ' + err.message);
+    } else {
+      alert('Gagal mengembalikan transaksi.');
     }
   };
 
   const handleDelete = async (id) => {
-    const confirmDelete = confirm('Yakin ingin menghapus transaksi ini?');
-    if (!confirmDelete) return;
-
-    try {
-      const res = await fetch(`/api/admin-transaksi/${id}`, {
-        method: 'DELETE',
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        alert('Transaksi berhasil dihapus');
-        fetchData();
-      } else {
-        console.error('Gagal hapus:', data.error);
-      }
-    } catch (error) {
-      console.error('Error saat hapus:', error);
+    const tx = transaksi.find((t) => t.id === id);
+    if (tx && !trashedTransaksi.some(t => t.id === id)) {
+      setTrashedTransaksi([...trashedTransaksi, tx]);
     }
+    if (!confirm('Yakin ingin menghapus transaksi ini?')) return;
+    await fetch(`/api/admin-transaksi/${id}`, { method: 'DELETE' });
+    fetchData();
   };
 
-  const filteredTransaksi = transaksi.filter((tx) =>
-    tx.nama_pembeli.toLowerCase().includes(search.toLowerCase())
+  const handleEdit = (tx) => {
+    setFormData({ nama_pembeli: tx.nama_pembeli });
+    setEditingId(tx.id);
+  };
+
+  const filtered = transaksi.filter((tx) =>
+    tx.nama_pembeli.toLowerCase().includes(search.toLowerCase()) ||
+    tx.produk?.nama?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const iconClasses = (path) =>
-    `text-xl hover:scale-125 transition-transform ${
-      pathname === path ? 'text-yellow-300' : 'text-white'
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const currentData = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const iconClasses = (targetPath) =>
+    `text-xl p-2 rounded-lg transition-all duration-300 cursor-pointer ${
+      pathname === targetPath ? 'bg-white text-pink-600 scale-110' : 'hover:bg-pink-200 text-white'
     }`;
 
   return (
     <div className="min-h-screen flex text-white">
-      {/* Sidebar */}
       <div className="w-16 bg-gradient-to-b from-[#351c1c] via-[#44221b] to-[#291510] flex flex-col items-center py-4 space-y-8 text-xl">
         <span title="Menu" className="text-2xl">☰</span>
         <button title="Dashboard" onClick={() => router.push('/admin-dashboard')} className={iconClasses('/admin-dashboard')}>📊</button>
-        <button title="Produk" onClick={() => router.push('/admin-product')} className={iconClasses('/admin-product')}>📦</button>
-        <button title="Users" onClick={() => router.push('/admin-users')} className={iconClasses('/admin-qcontact')}>👤</button>
-        <button title="Transaksi" onClick={() => router.push('/admin-transaksi')} className={iconClasses('/admin-transaksi')}>🧾</button>
-        <button title="Member" onClick={() => router.push('/admin-member')} className={iconClasses('/admin-member')}>👥</button>
+        <button title="Orders" onClick={() => router.push('/admin-product')} className={iconClasses('/admin-product')}>📦</button>
+        <button title="Users" onClick={() => router.push('/admin-qcontact')} className={iconClasses('/admin-qcontact')}>👤</button>
+        <button title="Gifts" onClick={() => router.push('/admin-transaksi')} className={iconClasses('/admin-transaksi')}>🧾</button>
+        <button title="Customers" onClick={() => router.push('/admin-member')} className={iconClasses('/admin-member')}>👥</button>
         <button title="Settings" onClick={() => router.push('/admin-settings')} className={iconClasses('/admin-settings')}>⚙️</button>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 bg-gradient-to-br from-orange-700 via-orange-400 to-yellow-300 p-8 overflow-x-auto text-black">
-        <h1 className="text-4xl font-bold mb-6">Dashboard Transaksi</h1>
+      <div className="flex-1 bg-gradient-to-br from-rose-100 via-pink-200 to-rose-300 p-10 overflow-x-auto text-black">
+        <h1 className="text-4xl font-bold mb-8 text-pink-700 text-center">{editingId ? 'Edit Transaksi' : 'Tambah Transaksi / Restore'}</h1>
 
-        {/* Form Tambah Transaksi */}
-        <form onSubmit={handleSubmit} className="bg-white p-4 rounded-lg mb-6 space-y-3 shadow">
-          <h2 className="font-semibold text-lg">Tambah Transaksi</h2>
-          <input type="text" name="nama_pembeli" placeholder="Nama Pembeli" value={formData.nama_pembeli} onChange={handleChange} className="w-full p-2 border rounded" required />
-          <input type="datetime-local" name="tanggal" value={formData.tanggal} onChange={handleChange} className="w-full p-2 border rounded" required />
-          <input type="number" name="produkId" placeholder="ID Produk" value={formData.produkId} onChange={handleChange} className="w-full p-2 border rounded" required />
-          <input type="number" name="total_harga" placeholder="Total Harga" value={formData.total_harga} onChange={handleChange} className="w-full p-2 border rounded" required />
-          <button type="submit" className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded">Add Now</button>
+        <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl mb-10 shadow-xl max-w-lg mx-auto">
+          <input
+            type="text"
+            name="nama_pembeli"
+            placeholder="Nama Pembeli yang ingin dikembalikan"
+            value={formData.nama_pembeli}
+            onChange={handleChange}
+            className="p-3 w-full rounded-md border border-pink-400"
+            required
+          />
+          <div className="text-center mt-4 space-x-2">
+            <button type="submit" className="bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-full shadow-lg">
+              Kembalikan Transaksi
+            </button>
+          </div>
         </form>
 
-        {/* Search */}
         <input
           type="text"
-          placeholder="Cari nama pembeli..."
-          className="p-2 w-full mb-4 rounded border"
+          placeholder="Cari nama pembeli atau produk..."
+          className="p-3 w-full mb-6 rounded-full border border-pink-400"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        {/* Table */}
-        <table className="min-w-full bg-pink-300 rounded-lg overflow-hidden">
-          <thead>
-            <tr className="bg-pink-600 text-white">
-              <th className="px-4 py-2">#</th>
-              <th className="px-4 py-2">Nama Pembeli</th>
-              <th className="px-4 py-2">Tanggal</th>
-              <th className="px-4 py-2">Produk</th>
-              <th className="px-4 py-2">Total Harga</th>
-              <th className="px-4 py-2">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredTransaksi.map((tx, index) => (
-              <tr key={tx.id} className="bg-pink-100 border-b border-pink-400">
-                <td className="px-4 py-2">{index + 1}</td>
-                <td className="px-4 py-2">{tx.nama_pembeli}</td>
-                <td className="px-4 py-2">{new Date(tx.tanggal).toLocaleString('id-ID')}</td>
-                <td className="px-4 py-2">{tx.produk?.nama || 'Produk tidak ditemukan'}</td>
-                <td className="px-4 py-2">{tx.total_harga.toLocaleString('id-ID')}</td>
-                <td className="px-4 py-2">
-                  <button className="text-red-600 hover:underline" onClick={() => handleDelete(tx.id)}>Hapus</button>
-                </td>
+        <div className="overflow-x-auto rounded-xl shadow-lg">
+          <table className="min-w-full bg-white rounded-lg overflow-hidden">
+            <thead>
+              <tr className="bg-pink-600 text-white">
+                <th className="px-6 py-3 text-left">#</th>
+                <th className="px-6 py-3 text-left">Nama Pembeli</th>
+                <th className="px-6 py-3 text-left">Tanggal</th>
+                <th className="px-6 py-3 text-left">Produk</th>
+                <th className="px-6 py-3 text-left">Total Harga</th>
+                <th className="px-6 py-3 text-left">Aksi</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {currentData.map((tx, index) => (
+                <tr key={tx.id} className="odd:bg-pink-100 even:bg-rose-100 border-b border-pink-300">
+                  <td className="px-6 py-3">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                  <td className="px-6 py-3">{tx.nama_pembeli}</td>
+                  <td className="px-6 py-3">{new Date(tx.tanggal).toLocaleString('id-ID')}</td>
+                  <td className="px-6 py-3">{tx.produk?.nama || `Produk #${tx.produkId}`}</td>
+                  <td className="px-6 py-3">Rp {parseInt(tx.total_harga).toLocaleString('id-ID')}</td>
+                  <td className="px-6 py-3 space-x-3">
+                    <button onClick={() => handleEdit(tx)} className="text-yellow-600 hover:text-yellow-800">✏️</button>
+                    <button onClick={() => handleDelete(tx.id)} className="text-red-600 hover:text-red-800">🗑️</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-        <footer className="mt-10 text-center text-sm text-black">
-          ©Rangga Store Copyright © 2023 - Developed by KSI ULAY. Powered by Moodle
+        <div className="flex justify-center mt-8 space-x-2">
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i}
+              className={`px-4 py-2 rounded-full text-sm font-semibold shadow ${
+                currentPage === i + 1 ? 'bg-pink-600 text-white' : 'bg-white text-pink-600'
+              }`}
+              onClick={() => setCurrentPage(i + 1)}
+            >
+              {i + 1}
+            </button>
+          ))}
+        </div>
+
+        <footer className="mt-12 text-center text-sm text-pink-700">
+          © Rangga Store 2025 – Developed with 💕 by KSI ULAY
         </footer>
       </div>
     </div>

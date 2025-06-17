@@ -134,7 +134,7 @@ export default function AdminDashboard() {
         <button title="Settings" onClick={() => router.push('/admin-settings')} className={iconClasses('/admin-settings')}>⚙️</button>
       </div>
 
-      <div className="flex-1 bg-gradient-to-br from-orange-700 via-orange-400 to-yellow-300 p-8">
+      <div className="flex-1 bg-gradient-to-br from-pink-200 via-rose-400 to-pink-300 p-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-4xl font-bold text-black">Dashboard</h1>
           <Link href="/login" onClick={() => localStorage.removeItem('isAdmin')} className="bg-white text-pink-600 px-4 py-2 rounded hover:bg-pink-100 font-bold text-sm">Logout</Link>

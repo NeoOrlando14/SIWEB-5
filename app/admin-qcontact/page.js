@@ -1,9 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 export default function AdminContactPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const [isAllowed, setIsAllowed] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -29,11 +30,9 @@ export default function AdminContactPage() {
     { id: 9, name: 'Dion', email: 'rumiy.bambank@wilds.id', image: 'dn.jpg' },
   ];
 
-  const iconClasses = (path) =>
-    `text-xl hover:scale-125 transition-transform ${
-      typeof window !== 'undefined' && window.location.pathname === path
-        ? 'text-yellow-300'
-        : 'text-white'
+  const iconClasses = (targetPath) =>
+    `text-xl p-2 rounded-lg transition-all duration-300 cursor-pointer ${
+      pathname === targetPath ? 'bg-white text-pink-600 scale-110' : 'hover:bg-pink-200 text-white'
     }`;
 
   const handleMessageClick = (user) => {
@@ -51,60 +50,18 @@ export default function AdminContactPage() {
   return (
     <div className="min-h-screen flex text-white">
       {/* Sidebar */}
-      <div className="w-16 bg-gradient-to-b from-[#351c1c] via-[#44221b] to-[#291510] flex flex-col items-center py-4 space-y-8 text-xl">
-        <span title="Menu" className="text-2xl">☰</span>
-
-        <button
-          title="Dashboard"
-          onClick={() => router.push('/admin-dashboard')}
-          className={iconClasses('/admin-dashboard')}
-        >
-          📊
-        </button>
-
-        <button
-          title="Orders"
-          onClick={() => router.push('/admin-product')}
-          className={iconClasses('/admin-product')}
-        >
-          📦
-        </button>
-
-        <button
-          title="Users"
-          onClick={() => router.push('/admin-qcontact')}
-          className={iconClasses('/admin-users')}
-        >
-          👤
-        </button>
-
-        <button
-          title="Gifts"
-          onClick={() => router.push('/admin-transaksi')}
-          className={iconClasses('/admin-transaksi')}
-        >
-          🧾
-        </button>
-
-        <button
-          title="Customers"
-          onClick={() => router.push('/admin-member')}
-          className={iconClasses('/admin-member')}
-        >
-          👥
-        </button>
-
-        <button
-          title="Settings"
-          onClick={() => router.push('/admin-settings')}
-          className={iconClasses('/admin-settings')}
-        >
-          ⚙️
-        </button>
+      <div className="w-16 bg-gradient-to-b from-[#351c1c] via-[#44221b] to-[#291510] flex flex-col items-center py-4 space-y-8">
+        <button title="Dashboard" onClick={() => router.push('/admin-dashboard')} className={iconClasses('/admin-dashboard')}>☰</button>
+        <button title="Dashboard" onClick={() => router.push('/admin-dashboard')} className={iconClasses('/admin-dashboard')}>📊</button>
+        <button title="Product" onClick={() => router.push('/admin-product')} className={iconClasses('/admin-product')}>📦</button>
+        <button title="Users" onClick={() => router.push('/admin-qcontact')} className={iconClasses('/admin-qcontact')}>👤</button>
+        <button title="Stock" onClick={() => router.push('/admin-transaksi')} className={iconClasses('/admin-transaksi')}>🧾</button>
+        <button title="Customers" onClick={() => router.push('/admin-member')} className={iconClasses('/admin-member')}>👥</button>
+        <button title="Settings" onClick={() => router.push('/admin-settings')} className={iconClasses('/admin-settings')}>⚙️</button>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 bg-gradient-to-br from-orange-700 via-orange-400 to-yellow-300 p-8">
+      <div className="flex-1 bg-gradient-to-br from-pink-200 via-rose-400 to-pink-300 p-8">
         <h1 className="text-4xl font-bold text-black mb-8">Contact</h1>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {contacts.map((user) => (
