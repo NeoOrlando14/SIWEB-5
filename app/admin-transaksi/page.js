@@ -9,7 +9,7 @@ export default function AdminTransaksiPage() {
 
   const [transaksi, setTransaksi] = useState([]);
   const [search, setSearch] = useState('');
-  const [formData, setFormData] = useState({ nama_pembeli: '' });
+  const [formData, setFormData] = useState({ nama_pembeli: '', produkId: '', total_harga: '' });
   const [currentPage, setCurrentPage] = useState(1);
   const [editingId, setEditingId] = useState(null);
   const [trashedTransaksi, setTrashedTransaksi] = useState([]);
@@ -32,12 +32,48 @@ export default function AdminTransaksiPage() {
   }, []);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, nama_pembeli: e.target.value });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const resetForm = () => {
+    setFormData({ nama_pembeli: '', produkId: '', total_harga: '' });
+    setEditingId(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const restored = trashedTransaksi.find(t => t.nama_pembeli.toLowerCase() === formData.nama_pembeli.toLowerCase());
+
+    const payload = {
+      nama_pembeli: formData.nama_pembeli,
+      produkId: parseInt(formData.produkId),
+      total_harga: parseInt(formData.total_harga),
+      tanggal: new Date().toISOString(),
+    };
+
+    const res = await fetch(
+      editingId ? `/api/admin-transaksi/${editingId}` : '/api/admin-transaksi',
+      {
+        method: editingId ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (res.ok) {
+      alert(editingId ? 'Transaksi diperbarui.' : 'Transaksi ditambahkan.');
+      resetForm();
+      fetchData();
+    } else {
+      alert('Gagal menyimpan transaksi.');
+    }
+  };
+
+  const handleRestore = async (e) => {
+    e.preventDefault();
+
+    const restored = trashedTransaksi.find(t =>
+      t.nama_pembeli.toLowerCase() === formData.nama_pembeli.toLowerCase()
+    );
     if (!restored) return alert('Tidak ditemukan transaksi sebelumnya untuk nama ini.');
 
     const res = await fetch('/api/admin-transaksi', {
@@ -50,9 +86,10 @@ export default function AdminTransaksiPage() {
         tanggal: new Date().toISOString(),
       }),
     });
+
     if (res.ok) {
       alert('Transaksi berhasil dikembalikan.');
-      setFormData({ nama_pembeli: '' });
+      resetForm();
       fetchData();
     } else {
       alert('Gagal mengembalikan transaksi.');
@@ -60,7 +97,7 @@ export default function AdminTransaksiPage() {
   };
 
   const handleDelete = async (id) => {
-    const tx = transaksi.find((t) => t.id === id);
+    const tx = transaksi.find(t => t.id === id);
     if (tx && !trashedTransaksi.some(t => t.id === id)) {
       setTrashedTransaksi([...trashedTransaksi, tx]);
     }
@@ -70,7 +107,11 @@ export default function AdminTransaksiPage() {
   };
 
   const handleEdit = (tx) => {
-    setFormData({ nama_pembeli: tx.nama_pembeli });
+    setFormData({
+      nama_pembeli: tx.nama_pembeli,
+      produkId: tx.produkId,
+      total_harga: tx.total_harga,
+    });
     setEditingId(tx.id);
   };
 
@@ -89,36 +130,81 @@ export default function AdminTransaksiPage() {
 
   return (
     <div className="min-h-screen flex text-white">
+      {/* Sidebar */}
       <div className="w-16 bg-gradient-to-b from-[#351c1c] via-[#44221b] to-[#291510] flex flex-col items-center py-4 space-y-8 text-xl">
         <span title="Menu" className="text-2xl">☰</span>
         <button title="Dashboard" onClick={() => router.push('/admin-dashboard')} className={iconClasses('/admin-dashboard')}>📊</button>
         <button title="Orders" onClick={() => router.push('/admin-product')} className={iconClasses('/admin-product')}>📦</button>
         <button title="Users" onClick={() => router.push('/admin-qcontact')} className={iconClasses('/admin-qcontact')}>👤</button>
-        <button title="Gifts" onClick={() => router.push('/admin-transaksi')} className={iconClasses('/admin-transaksi')}>🧾</button>
+        <button title="Transaksi" onClick={() => router.push('/admin-transaksi')} className={iconClasses('/admin-transaksi')}>🧾</button>
         <button title="Customers" onClick={() => router.push('/admin-member')} className={iconClasses('/admin-member')}>👥</button>
         <button title="Settings" onClick={() => router.push('/admin-settings')} className={iconClasses('/admin-settings')}>⚙️</button>
       </div>
 
+      {/* Konten */}
       <div className="flex-1 bg-gradient-to-br from-rose-100 via-pink-200 to-rose-300 p-10 overflow-x-auto text-black">
-        <h1 className="text-4xl font-bold mb-8 text-pink-700 text-center">{editingId ? 'Edit Transaksi' : 'Tambah Transaksi / Restore'}</h1>
+        <h1 className="text-4xl font-bold mb-8 text-pink-700 text-center">Tambah / Restore Transaksi</h1>
 
-        <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl mb-10 shadow-xl max-w-lg mx-auto">
+        {/* Form Tambah Transaksi */}
+        <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl mb-10 shadow-xl max-w-lg mx-auto space-y-4">
+          <h2 className="text-2xl font-bold text-pink-700 text-center">Tambah Transaksi Baru</h2>
           <input
             type="text"
             name="nama_pembeli"
-            placeholder="Nama Pembeli yang ingin dikembalikan"
+            placeholder="Nama Pembeli"
             value={formData.nama_pembeli}
             onChange={handleChange}
             className="p-3 w-full rounded-md border border-pink-400"
             required
           />
-          <div className="text-center mt-4 space-x-2">
+          <input
+            type="number"
+            name="produkId"
+            placeholder="ID Produk"
+            value={formData.produkId}
+            onChange={handleChange}
+            className="p-3 w-full rounded-md border border-pink-400"
+            required
+          />
+          <input
+            type="number"
+            name="total_harga"
+            placeholder="Total Harga"
+            value={formData.total_harga}
+            onChange={handleChange}
+            className="p-3 w-full rounded-md border border-pink-400"
+            required
+          />
+          <div className="text-center">
+            <button type="submit" className="bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-full shadow-lg">
+              {editingId ? 'Update Transaksi' : 'Tambah Transaksi'}
+            </button>
+            {editingId && (
+              <button type="button" onClick={resetForm} className="ml-4 text-pink-600 underline">Batal Edit</button>
+            )}
+          </div>
+        </form>
+
+        {/* Form Restore Transaksi */}
+        <form onSubmit={handleRestore} className="bg-white p-6 rounded-xl mb-10 shadow-xl max-w-lg mx-auto space-y-4">
+          <h2 className="text-2xl font-bold text-pink-700 text-center">Restore Transaksi</h2>
+          <input
+            type="text"
+            name="nama_pembeli"
+            placeholder="Nama Pembeli yang dihapus"
+            value={formData.nama_pembeli}
+            onChange={handleChange}
+            className="p-3 w-full rounded-md border border-pink-400"
+            required
+          />
+          <div className="text-center">
             <button type="submit" className="bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-full shadow-lg">
               Kembalikan Transaksi
             </button>
           </div>
         </form>
 
+        {/* Pencarian */}
         <input
           type="text"
           placeholder="Cari nama pembeli atau produk..."
@@ -127,6 +213,7 @@ export default function AdminTransaksiPage() {
           onChange={(e) => setSearch(e.target.value)}
         />
 
+        {/* Tabel Transaksi */}
         <div className="overflow-x-auto rounded-xl shadow-lg">
           <table className="min-w-full bg-white rounded-lg overflow-hidden">
             <thead>
@@ -134,6 +221,7 @@ export default function AdminTransaksiPage() {
                 <th className="px-6 py-3 text-left">#</th>
                 <th className="px-6 py-3 text-left">Nama Pembeli</th>
                 <th className="px-6 py-3 text-left">Tanggal</th>
+                <th className="px-6 py-3 text-left">ID Produk</th>
                 <th className="px-6 py-3 text-left">Produk</th>
                 <th className="px-6 py-3 text-left">Total Harga</th>
                 <th className="px-6 py-3 text-left">Aksi</th>
@@ -145,6 +233,7 @@ export default function AdminTransaksiPage() {
                   <td className="px-6 py-3">{(currentPage - 1) * itemsPerPage + index + 1}</td>
                   <td className="px-6 py-3">{tx.nama_pembeli}</td>
                   <td className="px-6 py-3">{new Date(tx.tanggal).toLocaleString('id-ID')}</td>
+                  <td className="px-6 py-3">{tx.produkId}</td>
                   <td className="px-6 py-3">{tx.produk?.nama || `Produk #${tx.produkId}`}</td>
                   <td className="px-6 py-3">Rp {parseInt(tx.total_harga).toLocaleString('id-ID')}</td>
                   <td className="px-6 py-3 space-x-3">
@@ -157,6 +246,7 @@ export default function AdminTransaksiPage() {
           </table>
         </div>
 
+        {/* Pagination */}
         <div className="flex justify-center mt-8 space-x-2">
           {Array.from({ length: totalPages }, (_, i) => (
             <button
