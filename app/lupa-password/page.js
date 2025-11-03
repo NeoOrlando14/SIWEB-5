@@ -7,13 +7,48 @@ export default function ForgotPasswordPage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (newPassword !== confirmPassword) {
-      alert('Password baru dan konfirmasi password tidak cocok!');
+      alert("Password baru dan konfirmasi tidak cocok!");
       return;
     }
-    alert('Password berhasil diubah!');
+
+    const email = localStorage.getItem("email");
+    if (!email) {
+      alert("Email tidak ditemukan. Silakan login ulang agar email tersimpan.");
+      return;
+    }
+
+    let res, data;
+
+    try {
+      res = await fetch("/api/password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, oldPassword, newPassword }),
+      });
+
+      const ct = res.headers.get("content-type") || "";
+      if (ct.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        alert(`Server membalas non-JSON (${res.status}).\n${text.slice(0,200)}`);
+        return;
+      }
+    } catch (err) {
+      alert("Tidak bisa menghubungi server: " + String(err));
+      return;
+    }
+
+    if (!res.ok || !data?.ok) {
+      alert(data?.message || "Gagal mengubah password.");
+      return;
+    }
+
+    alert(data.message || "Password berhasil diubah!");
   };
 
   return (
@@ -30,7 +65,7 @@ export default function ForgotPasswordPage() {
             <input
               type="password"
               placeholder="********"
-              className="w-full rounded-xl px-4 py-2.5 bg-[#2a2a2a] text-white border border-gray-600 outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-500 transition"
+              className="w-full rounded-xl px-4 py-2.5 bg-[#2a2a2a] text-white border border-gray-600 outline-none"
               value={oldPassword}
               onChange={(e) => setOldPassword(e.target.value)}
               required
@@ -42,7 +77,7 @@ export default function ForgotPasswordPage() {
             <input
               type="password"
               placeholder="********"
-              className="w-full rounded-xl px-4 py-2.5 bg-[#2a2a2a] text-white border border-gray-600 outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-500 transition"
+              className="w-full rounded-xl px-4 py-2.5 bg-[#2a2a2a] text-white border border-gray-600 outline-none"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
@@ -54,7 +89,7 @@ export default function ForgotPasswordPage() {
             <input
               type="password"
               placeholder="********"
-              className="w-full rounded-xl px-4 py-2.5 bg-[#2a2a2a] text-white border border-gray-600 outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-500 transition"
+              className="w-full rounded-xl px-4 py-2.5 bg-[#2a2a2a] text-white border border-gray-600 outline-none"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
@@ -63,7 +98,7 @@ export default function ForgotPasswordPage() {
 
           <button
             type="submit"
-            className="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-2.5 rounded-full transition shadow-lg mt-2"
+            className="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-2.5 rounded-full shadow-lg mt-2"
           >
             Simpan
           </button>

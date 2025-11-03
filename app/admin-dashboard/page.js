@@ -18,7 +18,6 @@ import {
 function Analytics({ metrics }) {
   return (
     <>
-      {/* Statistik */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-pink-300 text-black p-4 rounded-xl">
           <p>Total Produk</p>
@@ -42,13 +41,12 @@ function Analytics({ metrics }) {
         </div>
       </div>
 
-      {/* Grafik Penjualan */}
       <div className="bg-pink-300 rounded-xl p-4">
         <h2 className="text-xl font-bold mb-4 text-black">Grafik Penjualan</h2>
 
         <div className="bg-white rounded-md h-64 p-2 mb-6">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={metrics.grafikData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+            <LineChart data={metrics.grafikData}>
               <defs>
                 <linearGradient id="lineColor" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#ec4899" stopOpacity={0.9} />
@@ -73,7 +71,7 @@ function Analytics({ metrics }) {
 
         <div className="bg-white rounded-md h-64 p-2">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={metrics.grafikData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+            <BarChart data={metrics.grafikData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
               <XAxis dataKey="tanggal" stroke="#000" />
               <YAxis stroke="#000" />
@@ -95,26 +93,34 @@ export default function AdminDashboard() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchMetrics = async () => {
-      if (typeof window !== 'undefined') {
-        const isAdmin = localStorage.getItem('isAdmin');
-        if (!isAdmin) {
-          router.push('/login');
-          return;
-        }
-        try {
-          const res = await fetch('/api/admin-metric');
-          if (!res.ok) throw new Error('Gagal mengambil data');
-          const data = await res.json();
-          setMetrics(data);
-        } catch (err) {
-          setError(err.message);
-        } finally {
-          setLoading(false);
-        }
+    const checkAdmin = async () => {
+      const isLoggedIn = localStorage.getItem("isLoggedIn");
+      const role = localStorage.getItem("role");
+
+      if (isLoggedIn !== "true") {
+        router.push("/login");
+        return;
+      }
+
+      if (role !== "admin") {
+        alert("Halaman ini khusus Admin!");
+        router.push("/login");
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin-metric');
+        if (!res.ok) throw new Error('Gagal mengambil data');
+        const data = await res.json();
+        setMetrics(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchMetrics();
+
+    checkAdmin();
   }, [router]);
 
   const iconClasses = (targetPath) =>
@@ -137,7 +143,18 @@ export default function AdminDashboard() {
       <div className="flex-1 bg-gradient-to-br from-pink-200 via-rose-400 to-pink-300 p-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-4xl font-bold text-black">Dashboard</h1>
-          <Link href="/login" onClick={() => localStorage.removeItem('isAdmin')} className="bg-white text-pink-600 px-4 py-2 rounded hover:bg-pink-100 font-bold text-sm">Logout</Link>
+
+          <button 
+            onClick={() => {
+              localStorage.removeItem("isLoggedIn");
+              localStorage.removeItem("email");
+              localStorage.removeItem("role");
+              router.push("/login");
+            }} 
+            className="bg-white text-pink-600 px-4 py-2 rounded hover:bg-pink-100 font-bold text-sm"
+          >
+            Logout
+          </button>
         </div>
 
         {loading && (
