@@ -12,80 +12,81 @@ export default function RegisterPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     if (!email || !password || !phone || !dob) {
       alert('Semua data harus diisi!');
       return;
     }
-
     alert('Registrasi berhasil!');
     router.push('/login');
   };
 
   return (
-    <div
-      className="min-h-screen bg-pink-300 bg-cover bg-center flex items-center justify-center relative"
-      style={{ backgroundImage: "url('/register-bg.png')" }}
-    >
-      <div className="absolute inset-0 bg-[#d88b87]/80 z-0" />
-      <div className="relative z-10 p-8 rounded-xl w-full max-w-4xl">
-        <h1 className="text-center text-2xl md:text-3xl font-semibold mb-6 text-black font-serif">
-          Tolong buat data diri anda
+    <div className="min-h-screen bg-gradient-to-br from-[#1a1a1a] via-[#2d2d2d] to-[#3e3e3e] flex items-center justify-center p-4">
+      <div className="w-full max-w-4xl bg-[#1f1f1f] bg-opacity-90 backdrop-blur-lg rounded-3xl shadow-xl border border-gray-700 px-8 py-10">
+        <h1 className="text-center text-3xl font-extrabold text-white mb-2">
+          Buat Akun Baru
         </h1>
+        <p className="text-center text-sm text-gray-300 mb-8">
+          Tolong isi data diri Anda dengan benar.
+        </p>
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="flex flex-col">
-            <label className="text-black font-semibold mb-1">Email Baru</label>
+          <div>
+            <label className="block text-gray-300 font-medium mb-1">Email Baru</label>
             <input
               type="email"
-              placeholder="exmpaill@gmail.com"
-              className="rounded-md px-4 py-2 bg-white text-gray-700"
+              placeholder="emailmu@example.com"
+              className="w-full rounded-xl px-4 py-2.5 bg-[#2a2a2a] text-white border border-gray-600 outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-500 transition"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
-          <div className="flex flex-col">
-            <label className="text-black font-semibold mb-1">Password Baru</label>
+
+          <div>
+            <label className="block text-gray-300 font-medium mb-1">Password Baru</label>
             <input
               type="password"
-              placeholder="xxxxxxxxx"
-              className="rounded-md px-4 py-2 bg-white text-gray-700"
+              placeholder="********"
+              className="w-full rounded-xl px-4 py-2.5 bg-[#2a2a2a] text-white border border-gray-600 outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-500 transition"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          <div className="flex flex-col">
-            <label className="text-black font-semibold mb-1">No.Tlpn Baru</label>
+
+          <div>
+            <label className="block text-gray-300 font-medium mb-1">No. Telepon Baru</label>
             <input
               type="tel"
-              placeholder="082317XXXXXX"
-              className="rounded-md px-4 py-2 bg-white text-gray-700"
+              placeholder="0823xxxxxxx"
+              className="w-full rounded-xl px-4 py-2.5 bg-[#2a2a2a] text-white border border-gray-600 outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-500 transition"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
           </div>
-          <div className="flex flex-col">
-            <label className="text-black font-semibold mb-1">Tanggal Lahir</label>
+
+          <div>
+            <label className="block text-gray-300 font-medium mb-1">Tanggal Lahir</label>
             <input
               type="date"
-              className="rounded-md px-4 py-2 bg-white text-gray-700"
+              className="w-full rounded-xl px-4 py-2.5 bg-[#2a2a2a] text-white border border-gray-600 outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-500 transition"
               value={dob}
               onChange={(e) => setDob(e.target.value)}
             />
           </div>
-          <div className="md:col-span-2 mt-6 flex justify-center">
+
+          <div className="md:col-span-2 mt-2">
             <button
               type="submit"
-              className="bg-white px-6 py-2 rounded-md font-semibold text-pink-700 shadow-md hover:bg-pink-100 transition"
+              className="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-2.5 rounded-full transition shadow-lg"
             >
               Simpan
             </button>
           </div>
         </form>
 
-        <p className="mt-6 text-center text-sm text-white">
+        <p className="mt-6 text-center text-sm text-gray-300">
           Sudah punya akun?{' '}
-          <Link href="/login" className="underline text-white hover:text-pink-200">
+          <Link href="/login" className="hover:text-white transition underline decoration-gray-500">
             Login di sini
           </Link>
         </p>
