@@ -1,270 +1,184 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { Pencil, Trash2, Check, RotateCcw, Search } from "lucide-react";
 
-export default function AdminTransaksiPage() {
+export default function AdminTransaksi() {
   const router = useRouter();
   const pathname = usePathname();
 
   const [transaksi, setTransaksi] = useState([]);
-  const [search, setSearch] = useState('');
-  const [formData, setFormData] = useState({ nama_pembeli: '', produkId: '', total_harga: '' });
-  const [currentPage, setCurrentPage] = useState(1);
-  const [editingId, setEditingId] = useState(null);
-  const [trashedTransaksi, setTrashedTransaksi] = useState([]);
-  const itemsPerPage = 5;
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const fetchData = () => {
-    fetch('/api/admin-transaksi')
-      .then(res => res.json())
-      .then(data => setTransaksi(data))
-      .catch(err => console.error('Fetch error:', err));
-  };
+  // Sidebar Active Indicator
+  const iconClasses = (path) =>
+    `text-xl p-2 rounded-lg transition-all duration-300 cursor-pointer ${
+      pathname === path ? "bg-gray-100 text-black scale-110" : "hover:bg-gray-700 text-white"
+    }`;
+
+  // ================= FETCH DATA =================
+  async function fetchData() {
+    try {
+      const res = await fetch("/api/admin-transaksi");
+      const data = await res.json();
+      setTransaksi(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      setTransaksi([]);
+    }
+    setLoading(false);
+  }
 
   useEffect(() => {
-    const isAdmin = localStorage.getItem('isAdmin');
-    if (!isAdmin) {
-      router.push('/login');
-    } else {
-      fetchData();
-    }
+    fetchData();
   }, []);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  // Format Rupiah
+  const formatRupiah = (angka) => `Rp ${angka.toLocaleString("id-ID")}`;
+
+  // Format Tanggal
+  const formatTanggal = (date) => {
+    const t = new Date(date);
+    return t.toLocaleDateString("id-ID");
   };
 
-  const resetForm = () => {
-    setFormData({ nama_pembeli: '', produkId: '', total_harga: '' });
-    setEditingId(null);
-  };
+  // ================= DELETE =================
+  async function deleteTransaksi(id) {
+    if (!confirm("Hapus transaksi ini?")) return;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const payload = {
-      nama_pembeli: formData.nama_pembeli,
-      produkId: parseInt(formData.produkId),
-      total_harga: parseInt(formData.total_harga),
-      tanggal: new Date().toISOString(),
-    };
-
-    const res = await fetch(
-      editingId ? `/api/admin-transaksi/${editingId}` : '/api/admin-transaksi',
-      {
-        method: editingId ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      }
-    );
-
-    if (res.ok) {
-      alert(editingId ? 'Transaksi diperbarui.' : 'Transaksi ditambahkan.');
-      resetForm();
-      fetchData();
-    } else {
-      alert('Gagal menyimpan transaksi.');
-    }
-  };
-
-  const handleRestore = async (e) => {
-    e.preventDefault();
-
-    const restored = trashedTransaksi.find(t =>
-      t.nama_pembeli.toLowerCase() === formData.nama_pembeli.toLowerCase()
-    );
-    if (!restored) return alert('Tidak ditemukan transaksi sebelumnya untuk nama ini.');
-
-    const res = await fetch('/api/admin-transaksi', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        nama_pembeli: restored.nama_pembeli,
-        produkId: restored.produkId,
-        total_harga: restored.total_harga,
-        tanggal: new Date().toISOString(),
-      }),
+    await fetch(`/api/admin-transaksi/${id}`, {
+      method: "DELETE",
     });
-
-    if (res.ok) {
-      alert('Transaksi berhasil dikembalikan.');
-      resetForm();
-      fetchData();
-    } else {
-      alert('Gagal mengembalikan transaksi.');
-    }
-  };
-
-  const handleDelete = async (id) => {
-    const tx = transaksi.find(t => t.id === id);
-    if (tx && !trashedTransaksi.some(t => t.id === id)) {
-      setTrashedTransaksi([...trashedTransaksi, tx]);
-    }
-    if (!confirm('Yakin ingin menghapus transaksi ini?')) return;
-    await fetch(`/api/admin-transaksi/${id}`, { method: 'DELETE' });
     fetchData();
+  }
+
+  // ================= FILTER =================
+  const filtered = transaksi.filter((t) => String(t.id).includes(search));
+
+  // ================= LOGOUT (AMAN) =================
+  const handleLogout = () => {
+    if (typeof window !== "undefined") {
+      window.localStorage.clear();
+    }
+    router.push("/login");
   };
-
-  const handleEdit = (tx) => {
-    setFormData({
-      nama_pembeli: tx.nama_pembeli,
-      produkId: tx.produkId,
-      total_harga: tx.total_harga,
-    });
-    setEditingId(tx.id);
-  };
-
-  const filtered = transaksi.filter((tx) =>
-    tx.nama_pembeli.toLowerCase().includes(search.toLowerCase()) ||
-    tx.produk?.nama?.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const currentData = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  const iconClasses = (targetPath) =>
-    `text-xl p-2 rounded-lg transition-all duration-300 cursor-pointer ${
-      pathname === targetPath ? 'bg-white text-pink-600 scale-110' : 'hover:bg-pink-200 text-white'
-    }`;
 
   return (
     <div className="min-h-screen flex text-white">
-      {/* Sidebar */}
-      <div className="w-16 bg-gradient-to-b from-[#351c1c] via-[#44221b] to-[#291510] flex flex-col items-center py-4 space-y-8 text-xl">
-        <span title="Menu" className="text-2xl">☰</span>
-        <button title="Dashboard" onClick={() => router.push('/admin-dashboard')} className={iconClasses('/admin-dashboard')}>📊</button>
-        <button title="Orders" onClick={() => router.push('/admin-product')} className={iconClasses('/admin-product')}>📦</button>
-        <button title="Users" onClick={() => router.push('/admin-qcontact')} className={iconClasses('/admin-qcontact')}>👤</button>
-        <button title="Transaksi" onClick={() => router.push('/admin-transaksi')} className={iconClasses('/admin-transaksi')}>🧾</button>
-        <button title="Customers" onClick={() => router.push('/admin-member')} className={iconClasses('/admin-member')}>👥</button>
-        <button title="Settings" onClick={() => router.push('/admin-settings')} className={iconClasses('/admin-settings')}>⚙️</button>
+
+      {/* ========== SIDEBAR ========== */}
+      <div className="w-16 bg-[#1f1f1f] flex flex-col justify-between items-center py-4 border-r border-gray-700">
+
+        <div className="flex flex-col items-center space-y-8">
+          <span title="Menu" className="text-2xl text-gray-300">☰</span>
+
+          <button onClick={() => router.push('/admin-dashboard')} className={iconClasses('/admin-dashboard')}>📊</button>
+          <button onClick={() => router.push('/admin-product')} className={iconClasses('/admin-product')}>📦</button>
+          <button onClick={() => router.push('/admin-qcontact')} className={iconClasses('/admin-qcontact')}>👤</button>
+          <button onClick={() => router.push('/admin-transaksi')} className={iconClasses('/admin-transaksi')}>🧾</button>
+          <button onClick={() => router.push('/admin-pelanggan')} className={iconClasses('/admin-pelanggan')}>👥</button>
+          <button onClick={() => router.push('/admin-poin')} className={iconClasses('/admin-poin')}>🎁</button>
+        </div>
+
+        <button
+          onClick={handleLogout}
+          className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-800 hover:bg-red-600 transition-all duration-300 shadow-md mb-2"
+          title="Logout"
+        >
+          🚪
+        </button>
       </div>
 
-      {/* Konten */}
-      <div className="flex-1 bg-gradient-to-br from-rose-100 via-pink-200 to-rose-300 p-10 overflow-x-auto text-black">
-        <h1 className="text-4xl font-bold mb-8 text-pink-700 text-center">Tambah / Restore Transaksi</h1>
+      {/* ========== MAIN CONTENT ========== */}
+      <div className="flex-1 p-8 bg-gradient-to-br from-[#1a1a1a] via-[#2b2b2b] to-[#3a3a3a]">
 
-        {/* Form Tambah Transaksi */}
-        <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl mb-10 shadow-xl max-w-lg mx-auto space-y-4">
-          <h2 className="text-2xl font-bold text-pink-700 text-center">Tambah Transaksi Baru</h2>
-          <input
-            type="text"
-            name="nama_pembeli"
-            placeholder="Nama Pembeli"
-            value={formData.nama_pembeli}
-            onChange={handleChange}
-            className="p-3 w-full rounded-md border border-pink-400"
-            required
-          />
-          <input
-            type="number"
-            name="produkId"
-            placeholder="ID Produk"
-            value={formData.produkId}
-            onChange={handleChange}
-            className="p-3 w-full rounded-md border border-pink-400"
-            required
-          />
-          <input
-            type="number"
-            name="total_harga"
-            placeholder="Total Harga"
-            value={formData.total_harga}
-            onChange={handleChange}
-            className="p-3 w-full rounded-md border border-pink-400"
-            required
-          />
-          <div className="text-center">
-            <button type="submit" className="bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-full shadow-lg">
-              {editingId ? 'Update Transaksi' : 'Tambah Transaksi'}
-            </button>
-            {editingId && (
-              <button type="button" onClick={resetForm} className="ml-4 text-pink-600 underline">Batal Edit</button>
-            )}
+        <h1 className="text-3xl font-bold mb-6">Daftar Transaksi</h1>
+
+        {/* SEARCH BAR */}
+        <div className="flex justify-end mb-6">
+          <div className="flex items-center bg-[#2a2a2a] border border-gray-700 rounded-lg px-3 py-2">
+            <input
+              type="text"
+              placeholder="Search product or any order..."
+              className="bg-transparent outline-none text-white"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <Search size={18} className="ml-2 text-gray-400" />
           </div>
-        </form>
+        </div>
 
-        {/* Form Restore Transaksi */}
-        <form onSubmit={handleRestore} className="bg-white p-6 rounded-xl mb-10 shadow-xl max-w-lg mx-auto space-y-4">
-          <h2 className="text-2xl font-bold text-pink-700 text-center">Restore Transaksi</h2>
-          <input
-            type="text"
-            name="nama_pembeli"
-            placeholder="Nama Pembeli yang dihapus"
-            value={formData.nama_pembeli}
-            onChange={handleChange}
-            className="p-3 w-full rounded-md border border-pink-400"
-            required
-          />
-          <div className="text-center">
-            <button type="submit" className="bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-full shadow-lg">
-              Kembalikan Transaksi
+        {/* TABLE */}
+        <div className="bg-[#1f1f1f] p-6 rounded-xl border border-gray-700 shadow">
+
+          <div className="flex justify-end mb-5">
+            <button
+              onClick={() => router.push("/admin-transaksi/add")}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-white"
+            >
+              ➕ Tambah Transaksi
             </button>
           </div>
-        </form>
 
-        {/* Pencarian */}
-        <input
-          type="text"
-          placeholder="Cari nama pembeli atau produk..."
-          className="p-3 w-full mb-6 rounded-full border border-pink-400"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-
-        {/* Tabel Transaksi */}
-        <div className="overflow-x-auto rounded-xl shadow-lg">
-          <table className="min-w-full bg-white rounded-lg overflow-hidden">
+          <table className="w-full">
             <thead>
-              <tr className="bg-pink-600 text-white">
-                <th className="px-6 py-3 text-left">#</th>
-                <th className="px-6 py-3 text-left">Nama Pembeli</th>
-                <th className="px-6 py-3 text-left">Tanggal</th>
-                <th className="px-6 py-3 text-left">ID Produk</th>
-                <th className="px-6 py-3 text-left">Produk</th>
-                <th className="px-6 py-3 text-left">Total Harga</th>
-                <th className="px-6 py-3 text-left">Aksi</th>
+              <tr className="text-gray-400 border-b border-gray-700">
+                <th className="py-3 text-left">ID Transaksi</th>
+                <th className="text-left">Tanggal</th>
+                <th className="text-left">Harga</th>
+                <th className="text-left">Status</th>
+                <th className="text-left">Aksi</th>
               </tr>
             </thead>
+
             <tbody>
-              {currentData.map((tx, index) => (
-                <tr key={tx.id} className="odd:bg-pink-100 even:bg-rose-100 border-b border-pink-300">
-                  <td className="px-6 py-3">{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                  <td className="px-6 py-3">{tx.nama_pembeli}</td>
-                  <td className="px-6 py-3">{new Date(tx.tanggal).toLocaleString('id-ID')}</td>
-                  <td className="px-6 py-3">{tx.produkId}</td>
-                  <td className="px-6 py-3">{tx.produk?.nama || `Produk #${tx.produkId}`}</td>
-                  <td className="px-6 py-3">Rp {parseInt(tx.total_harga).toLocaleString('id-ID')}</td>
-                  <td className="px-6 py-3 space-x-3">
-                    <button onClick={() => handleEdit(tx)} className="text-yellow-600 hover:text-yellow-800">✏️</button>
-                    <button onClick={() => handleDelete(tx.id)} className="text-red-600 hover:text-red-800">🗑️</button>
-                  </td>
+              {loading ? (
+                <tr>
+                  <td colSpan="5" className="text-center py-5">Loading...</td>
                 </tr>
-              ))}
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="text-center py-5 text-gray-400">Tidak ada transaksi</td>
+                </tr>
+              ) : (
+                filtered.map((t) => (
+                  <tr key={t.id} className="border-b border-gray-700 hover:bg-[#2a2a2a]">
+
+                    <td className="py-3">{String(t.id).padStart(4, "0")}</td>
+                    <td>{formatTanggal(t.tanggal)}</td>
+                    <td>{formatRupiah(t.total_harga)}</td>
+
+                    {/* STATUS */}
+                    <td>
+                      {t.total_harga >= 20000 ? (
+                        <Check className="text-green-400 text-xl" />
+                      ) : (
+                        <RotateCcw className="text-gray-400 text-xl" />
+                      )}
+                    </td>
+
+                    {/* ACTION */}
+                    <td>
+                      <div className="flex items-center space-x-4 text-xl">
+                        <Pencil className="text-gray-300 hover:text-white cursor-pointer" />
+                        <Trash2
+                          className="text-red-500 hover:text-red-400 cursor-pointer"
+                          onClick={() => deleteTransaksi(t.id)}
+                        />
+                      </div>
+                    </td>
+
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
-        </div>
 
-        {/* Pagination */}
-        <div className="flex justify-center mt-8 space-x-2">
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button
-              key={i}
-              className={`px-4 py-2 rounded-full text-sm font-semibold shadow ${
-                currentPage === i + 1 ? 'bg-pink-600 text-white' : 'bg-white text-pink-600'
-              }`}
-              onClick={() => setCurrentPage(i + 1)}
-            >
-              {i + 1}
-            </button>
-          ))}
         </div>
-
-        <footer className="mt-12 text-center text-sm text-pink-700">
-          © Rangga Store 2025 – Developed with 💕 by KSI ULAY
-        </footer>
       </div>
+
     </div>
   );
 }

@@ -15,7 +15,12 @@ export default function ForgotPasswordPage() {
       return;
     }
 
-    const email = localStorage.getItem("email");
+    // 🛡 AMANKAN localStorage
+    let email = null;
+    if (typeof window !== "undefined") {
+      email = window.localStorage.getItem("email");
+    }
+
     if (!email) {
       alert("Email tidak ditemukan. Silakan login ulang agar email tersimpan.");
       return;
@@ -54,6 +59,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a1a1a] via-[#2d2d2d] to-[#3e3e3e] flex items-center justify-center p-4">
       <div className="bg-[#1f1f1f] bg-opacity-90 backdrop-blur-lg shadow-xl rounded-3xl w-full max-w-md px-8 py-10 border border-gray-700">
+
         <h1 className="text-3xl font-extrabold text-white mb-2">Ubah Password</h1>
         <p className="text-sm text-gray-300 mb-6">
           Tolong buat password Anda dengan benar.
@@ -109,6 +115,7 @@ export default function ForgotPasswordPage() {
             Kembali ke Login
           </Link>
         </div>
+
       </div>
     </div>
   );

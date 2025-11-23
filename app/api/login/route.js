@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import pkg from "pg";
+import { NextResponse } from 'next/server';
+import pkg from 'pg';
 const { Pool } = pkg;
 
 const pool = new Pool({
@@ -11,30 +11,42 @@ export async function POST(req) {
   try {
     const { email, password } = await req.json();
 
-    const user = await pool.query(
-      "SELECT id, email, password, role FROM users WHERE email = $1 AND password = $2",
+    if (!email || !password) {
+      return NextResponse.json(
+        { ok: false, message: "Email dan password wajib diisi!" },
+        { status: 400 }
+      );
+    }
+
+    // 🧠 ubah "User" -> users
+    const result = await pool.query(
+      `SELECT id, email, role FROM users WHERE email = $1 AND password = $2`,
       [email, password]
     );
 
-    if (user.rows.length === 0) {
+    if (result.rowCount === 0) {
       return NextResponse.json(
-        { ok: false, message: "Email atau password salah" },
+        { ok: false, message: "Email atau password salah!" },
         { status: 401 }
       );
     }
 
-    const loggedUser = user.rows[0];
+    const user = result.rows[0];
 
     return NextResponse.json({
       ok: true,
       user: {
-        email: loggedUser.email,
-        role: loggedUser.role,
+        id: user.id,
+        email: user.email,
+        role: user.role,
       },
     });
 
   } catch (err) {
-    console.error("Login Error:", err);
-    return NextResponse.json({ ok: false, message: "Server error" }, { status: 500 });
+    console.error("Login API Error:", err);
+    return NextResponse.json(
+      { ok: false, message: "Server error!", error: err.message },
+      { status: 500 }
+    );
   }
 }

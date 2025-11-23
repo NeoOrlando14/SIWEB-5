@@ -1,81 +1,70 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 export async function GET() {
   try {
-    // Total produk
+    // TOTAL PRODUK
     const totalProduk = await prisma.produk.count();
 
-    // Total order (transaksi)
+    // TOTAL ORDER
     const totalOrder = await prisma.transaksi.count();
 
-    // Total sales (jumlah total_harga dari semua transaksi)
+    // TOTAL SALES
     const totalSalesAgg = await prisma.transaksi.aggregate({
-      _sum: {
-        total_harga: true,
-      },
+      _sum: { total_harga: true },
     });
+
     const totalSales = totalSalesAgg._sum.total_harga || 0;
 
-    // Produk terlaris (produk dengan transaksi terbanyak)
-    const produkTerlarisData = await prisma.transaksi.groupBy({
-      by: ['produkId'],
-      _count: {
-        produkId: true,
-      },
-      orderBy: {
-        _count: {
-          produkId: 'desc',
-        },
-      },
+    // PRODUK TERLARIS
+    const top = await prisma.transaksi.groupBy({
+      by: ["produkId"],
+      _count: { produkId: true },
+      orderBy: { _count: { produkId: "desc" } },
       take: 1,
     });
 
-    let produkTerlaris = '-';
-    if (produkTerlarisData.length > 0) {
-      const produk = await prisma.produk.findUnique({
-        where: { id: produkTerlarisData[0].produkId },
+    let produkTerlaris = "-";
+
+    if (top.length > 0) {
+      const p = await prisma.produk.findUnique({
+        where: { id: top[0].produkId },
       });
-      produkTerlaris = produk?.nama || '-';
+
+      produkTerlaris = p?.nama ?? "-";
     }
 
-    // Grafik data penjualan: total transaksi per hari dalam 7 hari terakhir
+    // GRAFIK 7 HARI TERAKHIR
     const today = new Date();
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(today.getDate() - 6); // termasuk hari ini
+    const seven = new Date();
+    seven.setDate(today.getDate() - 6);
 
-    // Ambil transaksi dari 7 hari terakhir
     const transaksi7hari = await prisma.transaksi.findMany({
       where: {
         tanggal: {
-          gte: sevenDaysAgo,
+          gte: seven,
           lte: today,
         },
       },
-      orderBy: {
-        tanggal: 'asc',
-      },
+      orderBy: { tanggal: "asc" },
     });
 
-    // Inisialisasi semua tanggal 7 hari terakhir dengan total 0
     const dailyTotals = {};
+
+    // inisialisasi
     for (let i = 0; i < 7; i++) {
-      const d = new Date(sevenDaysAgo);
-      d.setDate(sevenDaysAgo.getDate() + i);
-      const dateStr = d.toISOString().slice(0, 10); // format yyyy-mm-dd
-      dailyTotals[dateStr] = 0;
+      const d = new Date(seven);
+      d.setDate(seven.getDate() + i);
+      dailyTotals[d.toISOString().slice(0, 10)] = 0;
     }
 
-    // Hitung total penjualan per hari
+    // isi data
     transaksi7hari.forEach((tr) => {
       const dateStr = tr.tanggal.toISOString().slice(0, 10);
-      if (dailyTotals[dateStr] !== undefined) {
-        dailyTotals[dateStr] += tr.total_harga;
-      }
+      dailyTotals[dateStr] += tr.total_harga || 0;
     });
 
-    // Ubah jadi array untuk grafik
     const grafikData = Object.entries(dailyTotals).map(([tanggal, total]) => ({
       tanggal,
       total,
@@ -89,18 +78,12 @@ export async function GET() {
         produkTerlaris,
         grafikData,
       }),
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
+      { status: 200 }
     );
-  } catch (error) {
-    console.error('Error API admin-metric:', error);
-    return new Response(
-      JSON.stringify({ error: 'Internal Server Error' }),
-      { status: 500 }
-    );
+  } catch (err) {
+    console.error("Error admin-metric:", err);
+    return new Response(JSON.stringify({ error: "Internal Server Error" }), {
+      status: 500,
+    });
   }
 }

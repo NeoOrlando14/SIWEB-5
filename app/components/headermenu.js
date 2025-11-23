@@ -9,19 +9,22 @@ export default function HeaderMenu() {
   const router = useRouter();
 
   const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('isLoggedIn');
+    }
     router.push('/login');
   };
 
   const goTo = (path) => {
     router.push(path);
-    setMenuOpen(false); // Tutup menu jika mobile
+    setMenuOpen(false); // Tutup menu mobile
   };
 
   return (
     <header className="w-full bg-pink-800 text-white py-4 z-50 relative shadow-lg">
       <nav className="container mx-auto px-4 flex justify-between items-center">
-        {/* Logo dan Judul */}
+        
+        {/* Logo + Home */}
         <div
           className="flex items-center space-x-3 cursor-pointer"
           onClick={() => goTo('/home')}
@@ -39,7 +42,7 @@ export default function HeaderMenu() {
           <li><button onClick={handleLogout} className="hover:text-yellow-300">Sign In</button></li>
         </ul>
 
-        {/* Tombol Burger Menu Mobile */}
+        {/* Burger Menu Mobile */}
         <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-2xl">
           {menuOpen ? <FaTimes /> : <FaBars />}
         </button>

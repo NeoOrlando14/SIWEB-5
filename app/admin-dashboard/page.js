@@ -1,8 +1,7 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useEffect, useState, Suspense } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import {
   LineChart,
   Line,
@@ -13,70 +12,70 @@ import {
   Tooltip,
   CartesianGrid,
   ResponsiveContainer
-} from 'recharts';
+} from "recharts";
+import { LogOut } from "lucide-react";
 
 function Analytics({ metrics }) {
   return (
     <>
+      {/* Statistik */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-pink-300 text-black p-4 rounded-xl">
-          <p>Total Produk</p>
+        <div className="bg-[#1f1f1f] p-4 rounded-xl border border-gray-700 shadow text-white">
+          <p className="text-gray-400">Total Produk</p>
           <h2 className="text-2xl font-bold">{metrics.totalProduk.toLocaleString()}</h2>
-          <p className="text-green-600 text-sm">⬆️ Up from yesterday</p>
+          <p className="text-green-500 text-sm">⬆️ Up from yesterday</p>
         </div>
-        <div className="bg-yellow-300 text-black p-4 rounded-xl">
-          <p>Total Order</p>
+
+        <div className="bg-[#1f1f1f] p-4 rounded-xl border border-gray-700 shadow text-white">
+          <p className="text-gray-400">Total Order</p>
           <h2 className="text-2xl font-bold">{metrics.totalOrder.toLocaleString()}</h2>
-          <p className="text-green-600 text-sm">⬆️ Up from past week</p>
+          <p className="text-green-500 text-sm">⬆️ Up from past week</p>
         </div>
-        <div className="bg-pink-200 text-black p-4 rounded-xl">
-          <p>Total Sales</p>
+
+        <div className="bg-[#1f1f1f] p-4 rounded-xl border border-gray-700 shadow text-white">
+          <p className="text-gray-400">Total Sales</p>
           <h2 className="text-2xl font-bold">Rp {metrics.totalSales.toLocaleString()}</h2>
-          <p className="text-red-600 text-sm">⬇️ Down from yesterday</p>
+          <p className="text-red-500 text-sm">⬇️ Down from yesterday</p>
         </div>
-        <div className="bg-red-300 text-black p-4 rounded-xl">
-          <p>Produk Terlaris</p>
+
+        <div className="bg-[#1f1f1f] p-4 rounded-xl border border-gray-700 shadow text-white">
+          <p className="text-gray-400">Produk Terlaris</p>
           <h2 className="text-2xl font-bold">{metrics.produkTerlaris}</h2>
-          <p className="text-green-600 text-sm">⭐</p>
+          <p className="text-yellow-400 text-sm">⭐ Best Seller</p>
         </div>
       </div>
 
-      <div className="bg-pink-300 rounded-xl p-4">
-        <h2 className="text-xl font-bold mb-4 text-black">Grafik Penjualan</h2>
+      {/* Grafik */}
+      <div className="bg-[#2a2a2a] rounded-xl p-4 border border-gray-700 shadow">
+        <h2 className="text-xl font-bold mb-4 text-white">Grafik Penjualan</h2>
 
-        <div className="bg-white rounded-md h-64 p-2 mb-6">
+        <div className="bg-[#1e1e1e] rounded-md h-64 p-2 mb-6">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={metrics.grafikData}>
-              <defs>
-                <linearGradient id="lineColor" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#ec4899" stopOpacity={0.9} />
-                  <stop offset="100%" stopColor="#fce7f3" stopOpacity={0.2} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-              <XAxis dataKey="tanggal" stroke="#000" />
-              <YAxis stroke="#000" />
-              <Tooltip contentStyle={{ backgroundColor: '#fce7f3', borderColor: '#ec4899' }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+              <XAxis dataKey="tanggal" stroke="#bbb" />
+              <YAxis stroke="#bbb" />
+              <Tooltip contentStyle={{ backgroundColor: "#2a2a2a", borderColor: "#555", color: "#fff" }} />
               <Line
                 type="monotone"
                 dataKey="total"
-                stroke="#ec4899"
+                stroke="#00bcd4"
                 strokeWidth={3}
-                dot={{ r: 4, stroke: '#ec4899', strokeWidth: 2, fill: '#fff' }}
+                dot={{ r: 4, stroke: "#00bcd4", strokeWidth: 2, fill: "#fff" }}
                 activeDot={{ r: 6 }}
               />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white rounded-md h-64 p-2">
+        <div className="bg-[#1e1e1e] rounded-md h-64 p-2">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={metrics.grafikData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-              <XAxis dataKey="tanggal" stroke="#000" />
-              <YAxis stroke="#000" />
-              <Tooltip contentStyle={{ backgroundColor: '#fce7f3', borderColor: '#f59e0b' }} />
-              <Bar dataKey="total" fill="#f59e0b" radius={[6, 6, 0, 0]} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+              <XAxis dataKey="tanggal" stroke="#bbb" />
+              <YAxis stroke="#bbb" />
+              <Tooltip contentStyle={{ backgroundColor: "#2a2a2a", borderColor: "#555", color: "#fff" }} />
+              <Bar dataKey="total" fill="#4ade80" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -94,8 +93,10 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const checkAdmin = async () => {
-      const isLoggedIn = localStorage.getItem("isLoggedIn");
-      const role = localStorage.getItem("role");
+      if (typeof window === "undefined") return;
+
+      const isLoggedIn = window.localStorage.getItem("isLoggedIn");
+      const role = window.localStorage.getItem("role");
 
       if (isLoggedIn !== "true") {
         router.push("/login");
@@ -109,8 +110,8 @@ export default function AdminDashboard() {
       }
 
       try {
-        const res = await fetch('/api/admin-metric');
-        if (!res.ok) throw new Error('Gagal mengambil data');
+        const res = await fetch("/api/admin-metric");
+        if (!res.ok) throw new Error("Gagal mengambil data");
         const data = await res.json();
         setMetrics(data);
       } catch (err) {
@@ -123,62 +124,70 @@ export default function AdminDashboard() {
     checkAdmin();
   }, [router]);
 
+  const handleLogout = () => {
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem("isLoggedIn");
+      window.localStorage.removeItem("email");
+      window.localStorage.removeItem("role");
+    }
+    router.push("/login");
+  };
+
   const iconClasses = (targetPath) =>
     `text-xl p-2 rounded-lg transition-all duration-300 cursor-pointer ${
-      pathname === targetPath ? 'bg-white text-pink-600 scale-110' : 'hover:bg-pink-200 text-white'
+      pathname === targetPath ? "bg-gray-100 text-black scale-110" : "hover:bg-gray-700 text-white"
     }`;
 
   return (
     <div className="min-h-screen flex text-white">
-      <div className="w-16 bg-gradient-to-b from-[#351c1c] via-[#44221b] to-[#291510] flex flex-col items-center py-4 space-y-8 text-xl">
-        <span title="Menu" className="text-2xl">☰</span>
-        <button title="Dashboard" onClick={() => router.push('/admin-dashboard')} className={iconClasses('/admin-dashboard')}>📊</button>
-        <button title="Orders" onClick={() => router.push('/admin-product')} className={iconClasses('/admin-product')}>📦</button>
-        <button title="Users" onClick={() => router.push('/admin-qcontact')} className={iconClasses('/admin-qcontact')}>👤</button>
-        <button title="Gifts" onClick={() => router.push('/admin-transaksi')} className={iconClasses('/admin-transaksi')}>🧾</button>
-        <button title="Customers" onClick={() => router.push('/admin-member')} className={iconClasses('/admin-member')}>👥</button>
-        <button title="Settings" onClick={() => router.push('/admin-settings')} className={iconClasses('/admin-settings')}>⚙️</button>
-      </div>
+      {/* Sidebar */}
+      <div className="w-16 bg-[#1f1f1f] flex flex-col justify-between items-center py-4 border-r border-gray-700">
+        <div className="flex flex-col items-center space-y-8">
+          <span title="Menu" className="text-2xl text-gray-300">☰</span>
+          <button onClick={() => router.push("/admin-dashboard")} className={iconClasses("/admin-dashboard")}>📊</button>
+          <button onClick={() => router.push("/admin-product")} className={iconClasses("/admin-product")}>📦</button>
+          <button onClick={() => router.push("/admin-qcontact")} className={iconClasses("/admin-qcontact")}>👤</button>
+          <button onClick={() => router.push("/admin-transaksi")} className={iconClasses("/admin-transaksi")}>🧾</button>
+          <button onClick={() => router.push("/admin-pelanggan")} className={iconClasses("/admin-pelanggan")}>👥</button>
+          <button onClick={() => router.push("/admin-poin")} className={iconClasses("/admin-poin")}>🎁</button>
+        </div>
 
-      <div className="flex-1 bg-gradient-to-br from-pink-200 via-rose-400 to-pink-300 p-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-4xl font-bold text-black">Dashboard</h1>
-
-          <button 
-            onClick={() => {
-              localStorage.removeItem("isLoggedIn");
-              localStorage.removeItem("email");
-              localStorage.removeItem("role");
-              router.push("/login");
-            }} 
-            className="bg-white text-pink-600 px-4 py-2 rounded hover:bg-pink-100 font-bold text-sm"
+        <div className="mb-2">
+          <button
+            onClick={handleLogout}
+            className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-800 hover:bg-red-600 transition-all duration-300 shadow-md"
           >
-            Logout
+            <LogOut size={18} />
           </button>
         </div>
+      </div>
+
+      {/* Konten */}
+      <div className="flex-1 bg-gradient-to-br from-[#1a1a1a] via-[#2d2d2d] to-[#3e3e3e] p-8">
+        <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
 
         {loading && (
           <div className="space-y-4 animate-pulse">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-white h-24 rounded-xl"></div>
+                <div key={i} className="bg-gray-800 h-24 rounded-xl"></div>
               ))}
             </div>
-            <div className="bg-white h-64 rounded-xl"></div>
-            <div className="bg-white h-64 rounded-xl"></div>
+            <div className="bg-gray-800 h-64 rounded-xl"></div>
+            <div className="bg-gray-800 h-64 rounded-xl"></div>
           </div>
         )}
 
-        {error && <p className="text-red-700 font-bold">Error: {error}</p>}
+        {error && <p className="text-red-500 font-bold">Error: {error}</p>}
 
         {!loading && metrics && (
-          <Suspense fallback={<div className="text-black">Memuat analitik...</div>}>
+          <Suspense fallback={<div className="text-gray-300">Memuat analitik...</div>}>
             <Analytics metrics={metrics} />
           </Suspense>
         )}
 
-        <footer className="mt-6 text-center text-sm text-black">
-          © Rangga Store Copyright © 2023 - Developed by KSI ULAY. Powered by Moodle
+        <footer className="mt-6 text-center text-sm text-gray-400">
+          © Admin Dashboard — Developed by SPLSK Team
         </footer>
       </div>
     </div>

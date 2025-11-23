@@ -1,4 +1,5 @@
 'use client';
+
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import HeaderMenu from '../components/headermenu';
@@ -6,18 +7,22 @@ import HeaderMenu from '../components/headermenu';
 export default function Home() {
   const router = useRouter();
 
-  // ✅ Logout function
+  // ======================== LOGOUT AMAN ========================
   const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
-    localStorage.removeItem("email");
-    localStorage.removeItem("role");
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem("isLoggedIn");
+      window.localStorage.removeItem("email");
+      window.localStorage.removeItem("role");
+    }
     router.push("/login");
   };
 
-  // ✅ Protect page (only customer allowed)
+  // ======================== PROTECT PAGE ========================
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem("isLoggedIn");
-    const role = localStorage.getItem("role");
+    if (typeof window === "undefined") return;
+
+    const isLoggedIn = window.localStorage.getItem("isLoggedIn");
+    const role = window.localStorage.getItem("role");
 
     if (isLoggedIn !== "true") {
       router.push("/login");
@@ -28,14 +33,14 @@ export default function Home() {
       alert("Halaman ini khusus untuk pembeli!");
       router.push("/login");
     }
-  }, []);
+  }, [router]);
 
   return (
     <main className="flex flex-col items-center justify-start w-full overflow-x-hidden">
       {/* Navbar */}
       <HeaderMenu />
 
-      {/* 🔥 BUTTON LOGOUT JANGAN LUPA */}
+      {/* 🔥 BUTTON LOGOUT */}
       <button 
         onClick={handleLogout}
         className="fixed top-4 right-4 bg-red-500 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm shadow-lg"
@@ -89,20 +94,17 @@ export default function Home() {
           {
             nama: "Neo",
             warna: "bg-[#8B6F4E]",
-            ulasan:
-              "Tukang roti adalah seseorang yang memanggang..."
+            ulasan: "Tukang roti adalah seseorang yang memanggang..."
           },
           {
             nama: "Hezron",
             warna: "bg-[#2D2318]",
-            ulasan:
-              "Kasir bertanggung jawab untuk menangani transaksi..."
+            ulasan: "Kasir bertanggung jawab untuk menangani transaksi..."
           },
           {
             nama: "Pivin",
             warna: "bg-[#C59B6D]",
-            ulasan:
-              "Mesin pencuci piring adalah mesin yang membersihkan..."
+            ulasan: "Mesin pencuci piring adalah mesin yang membersihkan..."
           }
         ].map((user, idx) => (
           <div key={idx} className={`${user.warna} p-6`}>

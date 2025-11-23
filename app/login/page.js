@@ -1,4 +1,5 @@
 'use client';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -8,7 +9,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isAdminMode, setIsAdminMode] = useState(false);
+  const [mode, setMode] = useState('user'); // user | admin | owner
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -26,15 +27,18 @@ export default function LoginPage() {
       return;
     }
 
-    // ✅ Save session
-    localStorage.setItem("email", data.user.email);
-    localStorage.setItem("role", data.user.role);
-    localStorage.setItem("isLoggedIn", "true");
+    // 🛡 AMANKAN LOCALSTORAGE
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("email", data.user.email);
+      window.localStorage.setItem("role", data.user.role);
+      window.localStorage.setItem("isLoggedIn", "true");
+    }
 
-    // ✅ Redirect based on role
+    // Redirect berdasarkan role
     if (data.user.role === "admin") {
-      localStorage.setItem("isAdmin", "true");
       router.push("/admin-dashboard");
+    } else if (data.user.role === "owner") {
+      router.push("/owner-dashboard");
     } else {
       router.push("/home");
     }
@@ -46,11 +50,14 @@ export default function LoginPage() {
         
         <h1 className="text-4xl font-extrabold text-white mb-2">Welcome</h1>
         <p className="text-sm text-gray-300 mb-6">
-          {isAdminMode ? "Login sebagai admin" : "Masukkan Email dan Password"}
+          {mode === 'admin' 
+            ? "Login sebagai Admin" 
+            : mode === 'owner'
+            ? "Login sebagai Owner"
+            : "Masukkan Email dan Password"}
         </p>
 
         <form onSubmit={handleLogin} className="space-y-4 text-left">
-          
           <div>
             <label className="block text-gray-300 font-semibold mb-1">Email</label>
             <div className="flex items-center border border-gray-600 rounded-full px-3 bg-[#2a2a2a]">
@@ -94,12 +101,21 @@ export default function LoginPage() {
           <Link href="/lupa-password" className="hover:text-white">Lupa Password?</Link>
         </div>
 
-        <button
-          onClick={() => setIsAdminMode(true)}
-          className="mt-6 w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 rounded-full transition shadow-md"
-        >
-          Login as Admin
-        </button>
+        <div className="mt-6 space-y-3">
+          <button
+            onClick={() => setMode('admin')}
+            className="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 rounded-full transition shadow-md"
+          >
+            Login as Admin
+          </button>
+
+          <button
+            onClick={() => setMode('owner')}
+            className="w-full bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 rounded-full transition shadow-md"
+          >
+            Login as Owner
+          </button>
+        </div>
       </div>
     </div>
   );
