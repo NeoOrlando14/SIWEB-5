@@ -14,6 +14,7 @@ model Produk {
   image     String      @default("default.jpg")
   rating    Int         @default(5)
   reviews   Int         @default(0)
+  stok      Int         @default(0)
   transaksi Transaksi[]
 }
 
@@ -23,6 +24,7 @@ model Transaksi {
   nama_pembeli String
   tanggal      DateTime @default(now())
   total_harga  Int
+  status       String?  @default("pending")
   produk       Produk   @relation(fields: [produkId], references: [id])
 }
 
@@ -52,7 +54,7 @@ model Customer {
   telepon   String
   poin      Int      @default(0)
   createdAt DateTime @default(now())
-  poinList  Poin[]
+  poinLog   Poin[]
 }
 
 model Poin {

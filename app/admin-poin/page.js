@@ -34,7 +34,6 @@ export default function AdminPoin() {
     p.customer.nama.toLowerCase().includes(search.toLowerCase())
   );
 
-  // ==== ADD ====
   async function handleAdd() {
     const customerId = prompt("Masukkan ID Pelanggan:");
     if (!customerId) return;
@@ -49,7 +48,6 @@ export default function AdminPoin() {
     loadData();
   }
 
-  // ==== UPDATE JUMLAH ====
   async function updateJumlah(id, newJumlah) {
     await fetch(`/api/poin/${id}`, {
       method: "PATCH",
@@ -58,7 +56,6 @@ export default function AdminPoin() {
     loadData();
   }
 
-  // ==== DELETE ====
   async function handleDelete(id) {
     if (!confirm("Hapus poin ini?")) return;
 
@@ -66,7 +63,6 @@ export default function AdminPoin() {
     loadData();
   }
 
-  // ==== LOGOUT (AMANKAN localStorage) ====
   const handleLogout = () => {
     if (typeof window !== "undefined") {
       window.localStorage.clear();
@@ -76,8 +72,7 @@ export default function AdminPoin() {
 
   return (
     <div className="min-h-screen flex text-white">
-
-      {/* Sidebar */}
+      {/* SIDEBAR */}
       <div className="w-16 bg-[#1f1f1f] flex flex-col justify-between items-center py-4 border-r border-gray-700">
         <div className="flex flex-col items-center space-y-8">
           <span className="text-2xl text-gray-300">☰</span>
@@ -89,90 +84,107 @@ export default function AdminPoin() {
           <button onClick={() => router.push("/admin-poin")} className={iconClasses("/admin-poin")}>🎁</button>
         </div>
 
-        <div className="mb-2">
-          <button
-            onClick={handleLogout}
-            className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-800 hover:bg-red-600 transition-all"
-          >
-            🚪
-          </button>
-        </div>
+        <button
+          onClick={handleLogout}
+          className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-800 hover:bg-red-600 transition"
+        >
+          🚪
+        </button>
       </div>
 
-      {/* Content */}
+      {/* CONTENT */}
       <div className="flex-1 bg-gradient-to-br from-[#1a1a1a] via-[#2d2d2d] to-[#3e3e3e] p-8">
-        <h1 className="text-3xl font-bold mb-6">Poin & Reward</h1>
-
-        {/* Search + Add */}
-        <div className="flex justify-between items-center mb-5">
-          <input
-            placeholder="Search pelanggan..."
-            className="px-4 py-2 rounded bg-gray-800 text-white border border-gray-700"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-
-          <button
-            onClick={handleAdd}
-            className="px-4 py-2 bg-green-500 rounded text-black font-bold"
-          >
-            ➕ Tukar
-          </button>
+        {/* HEADER */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">Poin & Reward</h1>
+          <p className="text-gray-400">
+            Kelola poin pelanggan dan sistem reward
+          </p>
         </div>
 
-        {/* Tabel */}
-        <div className="bg-[#2a2a2a] p-6 rounded-xl border border-gray-700 shadow">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-gray-600 text-gray-300">
-                <th className="py-3">ID Poin</th>
-                <th>ID Pelanggan</th>
-                <th>Jumlah</th>
-                <th>Status</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
+        {/* CARD UTAMA (DASHBOARD FEEL) */}
+        <div className="bg-[#2a2a2a] rounded-xl border border-gray-700 shadow p-6">
+          {/* SEARCH & BUTTON */}
+          <div className="flex justify-between items-center mb-5">
+            <input
+              placeholder="Search pelanggan..."
+              className="px-4 py-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-600"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
 
-            <tbody>
-              {filtered.map((poin) => (
-                <tr key={poin.id} className="border-b border-gray-700">
-                  <td className="py-3">{poin.id}</td>
-                  <td>{poin.customerId}</td>
+            <button
+              onClick={handleAdd}
+              className="px-4 py-2 bg-green-500 rounded-lg text-black font-bold hover:bg-green-400 transition"
+            >
+              ➕ Tukar Poin
+            </button>
+          </div>
 
-                  <td>
-                    <button
-                      onClick={() => updateJumlah(poin.id, poin.jumlah - 1)}
-                      className="px-2"
-                    >
-                      −
-                    </button>
-                    <span className="px-3">{poin.jumlah}</span>
-                    <button
-                      onClick={() => updateJumlah(poin.id, poin.jumlah + 1)}
-                      className="px-2"
-                    >
-                      +
-                    </button>
-                  </td>
-
-                  <td>
-                    {poin.status === "success" ? "✔" : "⟳"}
-                  </td>
-
-                  <td>
-                    <button
-                      onClick={() => handleDelete(poin.id)}
-                      className="text-red-400 text-xl"
-                    >
-                      🗑
-                    </button>
-                  </td>
+          {/* TABLE */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-gray-600 text-gray-300">
+                  <th className="py-3">ID Poin</th>
+                  <th>ID Pelanggan</th>
+                  <th>Jumlah</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
 
+              <tbody>
+                {filtered.map((poin) => (
+                  <tr
+                    key={poin.id}
+                    className="border-b border-gray-700 hover:bg-[#333] transition"
+                  >
+                    <td className="py-3">{poin.id}</td>
+                    <td>{poin.customerId}</td>
+
+                    <td>
+                      <button
+                        onClick={() => updateJumlah(poin.id, poin.jumlah - 1)}
+                        className="px-2 text-gray-400 hover:text-white"
+                      >
+                        −
+                      </button>
+                      <span className="px-3 font-semibold">{poin.jumlah}</span>
+                      <button
+                        onClick={() => updateJumlah(poin.id, poin.jumlah + 1)}
+                        className="px-2 text-gray-400 hover:text-white"
+                      >
+                        +
+                      </button>
+                    </td>
+
+                    <td>
+                      {poin.status === "success" ? "✔" : "⟳"}
+                    </td>
+
+                    <td>
+                      <button
+                        onClick={() => handleDelete(poin.id)}
+                        className="text-red-400 text-xl hover:text-red-500 transition"
+                      >
+                        🗑
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan="5" className="py-6 text-center text-gray-400">
+                      Tidak ada data poin
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -3,189 +3,109 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-const HeaderMenu = () => (
-  <div className="bg-pink-500 text-white text-center py-4 text-xl font-bold shadow-md">
-    Toko Kue Pak Rangga 🍰
-  </div>
-);
-
 export default function ShopPage() {
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState('');
-  const [cart, setCart] = useState({});
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
   const router = useRouter();
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await fetch('/api/products');
-        const data = await res.json();
-        setProducts(data);
-      } catch (error) {
-        console.error('Gagal memuat produk:', error);
-      }
-    };
-    fetchProducts();
+    fetch('/api/products')
+      .then(res => res.json())
+      .then(setProducts)
+      .catch(err => console.error("Gagal memuat produk:", err));
   }, []);
 
-  const handleAdd = (product) => {
-    setCart((prev) => ({
-      ...prev,
-      [product.id]: (prev[product.id] || 0) + 1,
-    }));
-  };
-
-  const handleRemove = (product) => {
-    setCart((prev) => {
-      if (!prev[product.id]) return prev;
-      const updated = { ...prev, [product.id]: prev[product.id] - 1 };
-      if (updated[product.id] <= 0) delete updated[product.id];
-      return updated;
-    });
-  };
-
   const handleBuy = async (product) => {
-    const nama = prompt('Masukkan nama pembeli:');
-    if (!nama) return;
+    const email = window.localStorage.getItem("email");
+
+    if (!email) {
+      alert("Anda harus login dulu!");
+      router.push("/login");
+      return;
+    }
+
+    const namaPembeli = email.split("@")[0];
 
     const payload = {
-      nama_pembeli: nama,
+      nama_pembeli: namaPembeli,
       produkId: product.id,
       total_harga: product.harga,
+      status: "pending",
       tanggal: new Date().toISOString(),
     };
 
     try {
-      const res = await fetch('/api/admin-transaksi', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/admin-transaksi", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
         const err = await res.json();
-        alert('Gagal Buy: ' + err.error);
-      } else {
-        alert('Transaksi berhasil dikirim!');
+        alert("Gagal Buy: " + err.error);
+        return;
       }
+
+      alert("Transaksi dibuat! Silakan cek Transaksi Saya");
+      router.push("/transaksi-saya");
+
     } catch (err) {
-      alert('Error saat membeli: ' + err.message);
+      alert("Error: " + err.message);
     }
   };
 
-  const filteredProducts = products.filter((p) =>
+  const filteredProducts = products.filter(p =>
     p.nama.toLowerCase().includes(search.toLowerCase())
   );
 
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const displayedProducts = filteredProducts.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const totalPrice = Object.entries(cart).reduce((total, [id, qty]) => {
-    const product = products.find((p) => p.id === parseInt(id));
-    return total + (product?.harga || 0) * qty;
-  }, 0);
-
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-orange-100 via-rose-200 to-pink-100">
-      <HeaderMenu />
+    <div className="min-h-screen p-6 text-white bg-gradient-to-br from-[#1a1a1a] via-[#2b2b2b] to-[#3a3a3a]">
 
-      <div className="container mx-auto px-4 py-6 flex-1">
-        {/* Search & Back Button */}
-        <div className="mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
-          <input
-            type="text"
-            placeholder="Cari produk..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full md:w-2/3 px-5 py-3 rounded-full border-2 border-pink-400 focus:outline-none focus:ring-2 focus:ring-pink-300 shadow text-gray-700 placeholder:text-gray-500"
-          />
-          <button
-            onClick={() => router.push('/')}
-            className="bg-pink-600 hover:bg-pink-700 text-white px-5 py-3 rounded-full shadow font-semibold"
-          >
-            ⬅ Kembali ke Home
-          </button>
-        </div>
+      {/* Header */}
+      <h1 className="text-3xl font-bold mb-6 text-[#ffcf80] text-center">
+        Menu Sebelah Kopi
+      </h1>
 
-        {/* Produk Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {displayedProducts.map((product) => (
-            <div
-              key={product.id}
-              className="bg-white bg-opacity-70 shadow-lg rounded-xl overflow-hidden transform hover:scale-105 transition duration-300"
-            >
-              <img
-                src={product.image}
-                alt={product.nama}
-                className="object-cover w-full h-48"
-              />
-              <div className="p-4 text-center">
-                <h3 className="text-lg font-semibold text-pink-800">{product.nama}</h3>
-                <p className="text-pink-600 font-bold text-base mt-1">
-                  Rp.{product.harga.toLocaleString()}
-                </p>
-                <p className="text-sm text-gray-700 mt-1">
-                  Jumlah: {cart[product.id] || 0}
-                </p>
-                <div className="flex justify-center flex-wrap gap-2 mt-3">
-                  <button
-                    onClick={() => handleRemove(product)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-full text-sm"
-                  >
-                    Hapus
-                  </button>
-                  <button
-                    onClick={() => handleAdd(product)}
-                    className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-full text-sm"
-                  >
-                    Tambah
-                  </button>
-                  <button
-                    onClick={() => handleBuy(product)}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-full text-sm"
-                  >
-                    Buy
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* Search + Back */}
+      <div className="flex justify-between mb-6">
+        <input
+          type="text"
+          placeholder="Cari produk..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="px-4 py-2 rounded-full bg-[#1f1f1f] border border-gray-600 w-2/3 text-white"
+        />
 
-        {/* Pagination */}
-        <div className="mt-8 flex justify-center flex-wrap gap-2">
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button
-              key={i + 1}
-              onClick={() => setCurrentPage(i + 1)}
-              className={`w-10 h-10 rounded-full text-sm font-bold shadow ${
-                currentPage === i + 1
-                  ? 'bg-pink-600 text-white'
-                  : 'bg-white text-pink-600 hover:bg-pink-200'
-              }`}
-            >
-              {i + 1}
-            </button>
-          ))}
-        </div>
-
-        {/* Total Harga */}
-        <div className="mt-8 text-right font-bold text-xl text-rose-800">
-          Total Harga: Rp.{totalPrice.toLocaleString()}
-        </div>
+        <button
+          onClick={() => router.push('/home')}
+          className="px-5 py-2 bg-[#ffcf80] hover:bg-yellow-300 text-black font-semibold rounded-full shadow"
+        >
+          ⬅ Kembali
+        </button>
       </div>
 
-      <footer className="text-center text-xs text-gray-600 mt-auto py-4">
-        © 2025 Toko Kue Pak Rangga. All Rights Reserved.
-      </footer>
+      {/* Produk */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {filteredProducts.map(product => (
+          <div key={product.id} className="bg-[#1f1f1f] border border-gray-700 rounded-xl shadow p-3">
+            <img src={product.image} className="h-40 w-full object-cover rounded-lg" />
+
+            <h3 className="text-lg font-bold mt-2 text-white">{product.nama}</h3>
+            <p className="text-[#ffcf80] text-xl font-extrabold">
+              Rp {product.harga.toLocaleString()}
+            </p>
+
+            <button
+              onClick={() => handleBuy(product)}
+              className="mt-3 w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg"
+            >
+              Buy
+            </button>
+          </div>
+        ))}
+      </div>
+
     </div>
   );
 }

@@ -1,14 +1,33 @@
-import { prisma } from "../../../lib/prisma";
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
 
 export async function GET() {
   try {
-    const transaksi = await prisma.transaksi.findMany({
-      include: { produk: true },
-      orderBy: { id: "asc" }
+    const data = await prisma.transaksi.findMany({
+      orderBy: { id: "desc" }
+    });
+    return Response.json(data);
+  } catch (err) {
+    return Response.json({ error: err.message }, { status: 500 });
+  }
+}
+
+export async function POST(req) {
+  try {
+    const body = await req.json();
+
+    const trx = await prisma.transaksi.create({
+      data: {
+        produkId: Number(body.produkId),
+        nama_pembeli: body.nama_pembeli,
+        total_harga: Number(body.total_harga),
+        tanggal: new Date(body.tanggal),
+        status: body.status || "pending",
+      },
     });
 
-    return Response.json(transaksi);
-  } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json(trx);
+  } catch (err) {
+    return Response.json({ error: err.message }, { status: 500 });
   }
 }

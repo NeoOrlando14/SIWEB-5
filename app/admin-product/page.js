@@ -96,13 +96,7 @@ export default function AdminProductPage() {
           >
             📦
           </button>
-          <button
-            title="Users"
-            onClick={() => router.push("/admin-qcontact")}
-            className={iconClasses("/admin-qcontact")}
-          >
-            👤
-          </button>
+
           <button
             title="Transactions"
             onClick={() => router.push("/admin-transaksi")}

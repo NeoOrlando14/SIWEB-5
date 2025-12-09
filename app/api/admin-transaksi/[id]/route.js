@@ -1,31 +1,49 @@
-import { prisma } from "../../../../lib/prisma";
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
 
-export async function DELETE(req, { params }) {
+// GET detail
+export async function GET(_, { params }) {
   try {
-    const id = Number(params.id);
-
-    await prisma.transaksi.delete({
-      where: { id }
+    const trx = await prisma.transaksi.findUnique({
+      where: { id: Number(params.id) },
     });
 
-    return Response.json({ message: "Deleted" });
-  } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json(trx);
+  } catch (err) {
+    return Response.json({ error: err.message }, { status: 500 });
   }
 }
 
+// UPDATE transaksi
 export async function PUT(req, { params }) {
   try {
-    const id = Number(params.id);
     const body = await req.json();
 
-    const update = await prisma.transaksi.update({
-      where: { id },
-      data: body
+    const trx = await prisma.transaksi.update({
+      where: { id: Number(params.id) },
+      data: {
+        produkId: Number(body.produkId),
+        nama_pembeli: body.nama_pembeli,
+        total_harga: Number(body.total_harga),
+        status: body.status,
+      },
     });
 
-    return Response.json(update);
-  } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json(trx);
+  } catch (err) {
+    return Response.json({ error: err.message }, { status: 500 });
+  }
+}
+
+// DELETE transaksi
+export async function DELETE(_, { params }) {
+  try {
+    await prisma.transaksi.delete({
+      where: { id: Number(params.id) },
+    });
+
+    return Response.json({ success: true });
+  } catch (err) {
+    return Response.json({ error: err.message }, { status: 500 });
   }
 }

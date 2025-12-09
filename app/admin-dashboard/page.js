@@ -146,7 +146,6 @@ export default function AdminDashboard() {
           <span title="Menu" className="text-2xl text-gray-300">☰</span>
           <button onClick={() => router.push("/admin-dashboard")} className={iconClasses("/admin-dashboard")}>📊</button>
           <button onClick={() => router.push("/admin-product")} className={iconClasses("/admin-product")}>📦</button>
-          <button onClick={() => router.push("/admin-qcontact")} className={iconClasses("/admin-qcontact")}>👤</button>
           <button onClick={() => router.push("/admin-transaksi")} className={iconClasses("/admin-transaksi")}>🧾</button>
           <button onClick={() => router.push("/admin-pelanggan")} className={iconClasses("/admin-pelanggan")}>👥</button>
           <button onClick={() => router.push("/admin-poin")} className={iconClasses("/admin-poin")}>🎁</button>

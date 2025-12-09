@@ -1,34 +1,25 @@
-import { prisma } from "@/lib/prisma";
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
 
 export async function GET() {
-  try {
-    const data = await prisma.poin.findMany({
-      include: {
-        customer: true,
-      },
-      orderBy: { id: "asc" }
-    });
-
-    return Response.json(data);
-  } catch (err) {
-    return Response.json({ error: err.message }, { status: 500 });
-  }
+  const data = await prisma.poin.findMany({
+    include: { customer: true }
+  });
+  return Response.json(data);
 }
 
 export async function POST(req) {
   try {
     const body = await req.json();
-
-    const add = await prisma.poin.create({
+    const poin = await prisma.poin.create({
       data: {
         customerId: body.customerId,
         jumlah: body.jumlah,
-        status: body.status || "pending",
-      },
+        status: "pending"
+      }
     });
-
-    return Response.json(add);
+    return Response.json(poin);
   } catch (err) {
-    return Response.json({ error: err.message }, { status: 400 });
+    return Response.json({ error: err.message }, { status: 500 });
   }
 }
