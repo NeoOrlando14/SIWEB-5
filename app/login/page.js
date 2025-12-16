@@ -27,11 +27,16 @@ export default function LoginPage() {
       return;
     }
 
-    // 🛡 AMANKAN LOCALSTORAGE
+    // 🛡 SIMPAN TOKEN DAN USER DATA
     if (typeof window !== "undefined") {
       window.localStorage.setItem("email", data.user.email);
       window.localStorage.setItem("role", data.user.role);
+      window.localStorage.setItem("userId", data.user.id); // Save userId
       window.localStorage.setItem("isLoggedIn", "true");
+      // Simpan token untuk request API
+      if (data.token) {
+        window.localStorage.setItem("auth-token", data.token);
+      }
     }
 
     // Redirect berdasarkan role
@@ -98,10 +103,10 @@ export default function LoginPage() {
 
         <div className="flex justify-between text-sm text-gray-400 mt-4">
           <Link href="/register" className="hover:text-white">Register?</Link>
-          <Link href="/lupa-password" className="hover:text-white">Lupa Password?</Link>
+          {/* <Link href="/lupa-password" className="hover:text-white">Lupa Password?</Link> */}
         </div>
 
-        <div className="mt-6 space-y-3">
+        {/* <div className="mt-6 space-y-3">
           <button
             onClick={() => setMode('admin')}
             className="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 rounded-full transition shadow-md"
@@ -115,7 +120,7 @@ export default function LoginPage() {
           >
             Login as Owner
           </button>
-        </div>
+        </div> */}
       </div>
     </div>
   );

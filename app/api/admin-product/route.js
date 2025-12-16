@@ -1,22 +1,23 @@
-import { prisma } from "@/lib/prisma";
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
 
+// GET ALL
 export async function GET() {
-  const data = await prisma.product.findMany({
-    orderBy: { id: "desc" },
-  });
-  return Response.json(data);
+  const products = await prisma.produk.findMany();
+  return Response.json(products);
 }
 
+// CREATE
 export async function POST(req) {
   const body = await req.json();
 
-  const product = await prisma.product.create({
+  const newProduct = await prisma.produk.create({
     data: {
       nama: body.nama,
-      harga: Number(body.harga),
-      stok: Number(body.stok),
+      harga: body.harga,
+      stok: body.stok
     },
   });
 
-  return Response.json(product);
+  return Response.json(newProduct);
 }

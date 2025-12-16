@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma migrate:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(npm run dev:*)",
+      "Bash(node verify-system.js:*)",
+      "Bash(curl:*)",
+      "Bash(json_pp:*)",
+      "Bash(node check-bulk-transactions.js:*)",
+      "Bash(node test-bulk-fix.js:*)",
+      "Bash(findstr:*)",
+      "Bash(cat:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(set DATABASE_URL=mysql://root@localhost:3306/sebelah_kopi)",
+      "Bash(dos2unix:*)",
+      "Bash(echo:*)",
+      "Bash(unset:*)",
+      "Bash(npm run build:*)",
+      "Bash(node --version:*)",
+      "Bash(npm install)"
+    ]
+  }
+}

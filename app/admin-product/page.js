@@ -11,6 +11,7 @@ export default function AdminProductPage() {
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState({ show: false, message: "", type: "" });
 
   const iconClasses = (targetPath) =>
     `text-xl p-2 rounded-lg transition-all duration-300 cursor-pointer ${
@@ -18,6 +19,14 @@ export default function AdminProductPage() {
         ? "bg-gray-100 text-black scale-110"
         : "hover:bg-gray-700 text-white"
     }`;
+
+  // Toast notification helper
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: "", type: "" });
+    }, 3000);
+  };
 
   // ===================== FETCH PRODUCTS =====================
   async function fetchProducts() {
@@ -38,26 +47,58 @@ export default function AdminProductPage() {
   // ===================== UPDATE STOK =====================
   async function updateStok(id, amount) {
     try {
-      await fetch("/api/products/update-stok", {
+      const res = await fetch("/api/products/update-stok", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, amount }),
       });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        showToast(data.error || "Gagal mengupdate stok", "error");
+        return;
+      }
+
       fetchProducts();
+      showToast("Stok berhasil diupdate", "success");
     } catch (e) {
       console.error("Update stok error:", e);
+      showToast("Terjadi kesalahan saat mengupdate stok", "error");
     }
   }
 
   // ===================== DELETE PRODUCT =====================
   async function deleteProduct(id) {
-    if (!confirm("Yakin ingin menghapus produk?")) return;
+    // Find product to check stock
+    const product = products.find(p => p.id === id);
+
+    if (!product) {
+      showToast("Produk tidak ditemukan", "error");
+      return;
+    }
+
+    // Check if stock is 0
+    if (product.stok > 0) {
+      showToast(`Tidak dapat menghapus! Produk masih memiliki stok: ${product.stok}`, "error");
+      return;
+    }
+
+    if (!confirm("Yakin ingin menghapus produk ini?")) return;
 
     try {
-      await fetch(`/api/products/${id}`, { method: "DELETE" });
-      fetchProducts();
+      const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
+      const data = await res.json();
+
+      if (res.ok) {
+        showToast("Produk berhasil dihapus", "success");
+        fetchProducts();
+      } else {
+        showToast(data.error || "Gagal menghapus produk", "error");
+      }
     } catch (e) {
       console.error("Delete error:", e);
+      showToast("Terjadi kesalahan saat menghapus produk", "error");
     }
   }
 
@@ -75,6 +116,18 @@ export default function AdminProductPage() {
 
   return (
     <div className="min-h-screen flex text-white">
+      {/* TOAST NOTIFICATION */}
+      {toast.show && (
+        <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 animate-slide-in ${
+          toast.type === "success" ? "bg-green-600" : "bg-red-600"
+        }`}>
+          <span className="text-2xl">
+            {toast.type === "success" ? "✓" : "✕"}
+          </span>
+          <span className="font-semibold">{toast.message}</span>
+        </div>
+      )}
+
       {/* ---------------- SIDEBAR ---------------- */}
       <div className="w-16 bg-[#1f1f1f] flex flex-col justify-between items-center py-4 border-r border-gray-700">
         <div className="flex flex-col items-center space-y-8">
@@ -96,13 +149,7 @@ export default function AdminProductPage() {
           >
             📦
           </button>
-          <button
-            title="Users"
-            onClick={() => router.push("/admin-qcontact")}
-            className={iconClasses("/admin-qcontact")}
-          >
-            👤
-          </button>
+
           <button
             title="Transactions"
             onClick={() => router.push("/admin-transaksi")}
@@ -204,16 +251,23 @@ export default function AdminProductPage() {
                       <div className="flex items-center space-x-3">
                         <button
                           onClick={() => updateStok(p.id, -1)}
-                          className="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded"
+                          disabled={p.stok <= 0}
+                          className={`px-3 py-1 rounded transition ${
+                            p.stok <= 0
+                              ? "bg-gray-800 text-gray-600 cursor-not-allowed"
+                              : "bg-gray-700 hover:bg-gray-600"
+                          }`}
+                          title={p.stok <= 0 ? "Stok sudah 0" : "Kurangi stok"}
                         >
                           -
                         </button>
-                        <span className="px-4 py-1 bg-gray-800 rounded">
+                        <span className="px-4 py-1 bg-gray-800 rounded font-semibold">
                           {p.stok}
                         </span>
                         <button
                           onClick={() => updateStok(p.id, +1)}
                           className="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded"
+                          title="Tambah stok"
                         >
                           +
                         </button>
@@ -225,10 +279,20 @@ export default function AdminProductPage() {
                         <Edit3
                           onClick={() => router.push(`/admin-product/edit/${p.id}`)}
                           className="cursor-pointer text-blue-400 hover:text-blue-300"
+                          title="Edit produk"
                         />
                         <Trash2
                           onClick={() => deleteProduct(p.id)}
-                          className="cursor-pointer text-red-500 hover:text-red-400"
+                          className={`cursor-pointer ${
+                            p.stok > 0
+                              ? "text-gray-600 cursor-not-allowed"
+                              : "text-red-500 hover:text-red-400"
+                          }`}
+                          title={
+                            p.stok > 0
+                              ? `Tidak dapat dihapus (stok: ${p.stok})`
+                              : "Hapus produk"
+                          }
                         />
                       </div>
                     </td>

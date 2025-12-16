@@ -12,7 +12,7 @@ export default function AdminPelanggan() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // ==== CHECK LOGIN ROLE (AMANKAN localStorage) ====
+  // ==== CEK LOGIN ====
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -24,7 +24,7 @@ export default function AdminPelanggan() {
     }
   }, [router]);
 
-  // ==== ICON ACTIVE ====
+  // Sidebar active style
   const iconClasses = (path) =>
     `text-xl p-2 rounded-lg transition-all duration-300 cursor-pointer ${
       pathname === path
@@ -83,7 +83,7 @@ export default function AdminPelanggan() {
       )
     : [];
 
-  // ==== LOGOUT AMAN (FIX localStorage.clear) ====
+  // ==== LOGOUT ====
   const handleLogout = () => {
     if (typeof window !== "undefined") {
       window.localStorage.clear();
@@ -102,13 +102,11 @@ export default function AdminPelanggan() {
 
           <button onClick={() => router.push("/admin-dashboard")} className={iconClasses("/admin-dashboard")}>📊</button>
           <button onClick={() => router.push("/admin-product")} className={iconClasses("/admin-product")}>📦</button>
-          <button onClick={() => router.push("/admin-qcontact")} className={iconClasses("/admin-qcontact")}>👤</button>
           <button onClick={() => router.push("/admin-transaksi")} className={iconClasses("/admin-transaksi")}>🧾</button>
           <button onClick={() => router.push("/admin-pelanggan")} className={iconClasses("/admin-pelanggan")}>👥</button>
           <button onClick={() => router.push("/admin-poin")} className={iconClasses("/admin-poin")}>🎁</button>
         </div>
 
-        {/* Logout */}
         <div className="mb-2">
           <button
             onClick={handleLogout}
@@ -142,6 +140,7 @@ export default function AdminPelanggan() {
 
         {/* TABLE */}
         <div className="bg-[#1f1f1f] p-6 rounded-xl border border-gray-700 shadow">
+
           <table className="w-full">
             <thead>
               <tr className="text-gray-400 border-b border-gray-700">
@@ -182,7 +181,7 @@ export default function AdminPelanggan() {
                     <td>
                       <div className="flex items-center space-x-5 text-xl">
                         <X className="text-red-500 hover:text-red-400 cursor-pointer" onClick={() => deleteCustomer(c.id)} />
-                        <Check className="text-green-400 hover:text-green-300 cursor-pointer" />
+                        {/* <Check className="text-green-400 hover:text-green-300 cursor-pointer" /> */}
                       </div>
                     </td>
                   </tr>
@@ -193,8 +192,18 @@ export default function AdminPelanggan() {
 
           {/* BOTTOM BUTTONS */}
           <div className="flex justify-between mt-6">
-            <button className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded">Tambah</button>
-            <button className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded">Berikutnya</button>
+
+            {/* ===== FIXED BUTTON TAMBAH ===== */}
+            <button
+              onClick={() => router.push("/admin-pelanggan/add")}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded"
+            >
+              ➕ Tambah
+            </button>
+
+            <button className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded">
+              Berikutnya
+            </button>
           </div>
         </div>
 

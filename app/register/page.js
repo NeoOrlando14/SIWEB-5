@@ -6,14 +6,13 @@ import Link from 'next/link';
 export default function RegisterPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [dob, setDob] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!email || !password || !phone || !dob) {
+    if (!email || !phone || !dob) {
       alert('Semua data harus diisi!');
       return;
     }
@@ -22,7 +21,7 @@ export default function RegisterPage() {
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, phone, dob })
+        body: JSON.stringify({ email, phone, dob })
       });
 
       const data = await res.json();
@@ -60,20 +59,13 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-gray-300 font-medium mb-1">Password Baru</label>
-            <input type="password" placeholder="********"
-              className="w-full rounded-xl px-4 py-2.5 bg-[#2a2a2a] text-white border border-gray-600 outline-none"
-              value={password} onChange={(e) => setPassword(e.target.value)} />
-          </div>
-
-          <div>
             <label className="block text-gray-300 font-medium mb-1">No. Telepon Baru</label>
             <input type="tel" placeholder="0823xxxxxxx"
               className="w-full rounded-xl px-4 py-2.5 bg-[#2a2a2a] text-white border border-gray-600 outline-none"
               value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
 
-          <div>
+          <div className="md:col-span-2">
             <label className="block text-gray-300 font-medium mb-1">Tanggal Lahir</label>
             <input type="date"
               className="w-full rounded-xl px-4 py-2.5 bg-[#2a2a2a] text-white border border-gray-600 outline-none"

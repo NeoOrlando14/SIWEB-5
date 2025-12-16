@@ -1,11 +1,7 @@
 import { NextResponse } from 'next/server';
-import pkg from 'pg';
-const { Pool } = pkg;
+import { PrismaClient } from '@prisma/client';
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-});
+const prisma = new PrismaClient();
 
 export async function POST(req) {
   try {
@@ -22,12 +18,14 @@ export async function POST(req) {
     }
 
     // Cek user lama
-    const user = await pool.query(
-      `SELECT id FROM users WHERE email = $1 AND password = $2`,
-      [email, oldPassword]
-    );
+    const user = await prisma.users.findFirst({
+      where: {
+        email: email,
+        password: oldPassword
+      }
+    });
 
-    if (user.rowCount === 0) {
+    if (!user) {
       return NextResponse.json(
         { ok: false, message: "Password lama salah atau email tidak ditemukan." },
         { status: 401 }
@@ -35,10 +33,10 @@ export async function POST(req) {
     }
 
     // Update password
-    await pool.query(
-      `UPDATE users SET password = $1 WHERE email = $2`,
-      [newPassword, email]
-    );
+    await prisma.users.update({
+      where: { email: email },
+      data: { password: newPassword }
+    });
 
     return NextResponse.json(
       { ok: true, message: "Password berhasil diubah!" },

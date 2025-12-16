@@ -1,0 +1,26 @@
+[
+  {
+    "Nama_Produk": "lapet",
+    "Jumlah": 3,
+    "Total_Harga": 15000,
+    "Nama_Pembeli": "Andi Saputra",
+    "Tanggal": "2023-01-10",
+    "Status": "Selesai"
+  },
+  {
+    "nama_produk": "ombus",
+    "jumlah": 4,
+    "total_harga": 20000,
+    "nama_pembeli": "Siti Aisyah",
+    "tanggal": "2023-01-11",
+    "status": "Selesai"
+  },
+  {
+    "NAMA_PRODUK": "IKAN MAS",
+    "JUMLAH": 2,
+    "TOTAL_HARGA": 75000,
+    "NAMA_PEMBELI": "Budi Santoso",
+    "TANGGAL": "2023-01-12",
+    "STATUS": "Selesai"
+  }
+]

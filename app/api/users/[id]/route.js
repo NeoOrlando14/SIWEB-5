@@ -1,20 +1,22 @@
 import { NextResponse } from "next/server";
-import pkg from "pg";
-const { Pool } = pkg;
+import { PrismaClient } from '@prisma/client';
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
+const prisma = new PrismaClient();
 
 // ✅ GET user by ID
 export async function GET(_, { params }) {
   const { id } = params;
-  const user = await pool.query(
-    `SELECT id, email, phone, dob, role FROM users WHERE id = $1`,
-    [id]
-  );
-  return NextResponse.json(user.rows[0]);
+  const user = await prisma.users.findUnique({
+    where: { id: Number(id) },
+    select: {
+      id: true,
+      email: true,
+      phone: true,
+      dob: true,
+      role: true
+    }
+  });
+  return NextResponse.json(user);
 }
 
 // ✅ UPDATE user
@@ -22,12 +24,15 @@ export async function PUT(req, { params }) {
   const { id } = params;
   const { email, phone, dob, role } = await req.json();
 
-  await pool.query(
-    `UPDATE users 
-     SET email=$1, phone=$2, dob=$3, role=$4 
-     WHERE id=$5`,
-    [email, phone, dob, role, id]
-  );
+  await prisma.users.update({
+    where: { id: Number(id) },
+    data: {
+      email,
+      phone,
+      dob: new Date(dob),
+      role
+    }
+  });
 
   return NextResponse.json({ ok: true, message: "User berhasil diupdate ✅" });
 }
@@ -36,7 +41,9 @@ export async function PUT(req, { params }) {
 export async function DELETE(_, { params }) {
   const { id } = params;
 
-  await pool.query(`DELETE FROM users WHERE id=$1`, [id]);
+  await prisma.users.delete({
+    where: { id: Number(id) }
+  });
 
   return NextResponse.json({ ok: true, message: "User berhasil dihapus ❌" });
 }
