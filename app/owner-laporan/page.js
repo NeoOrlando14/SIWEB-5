@@ -3,16 +3,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileUp, Save, RefreshCcw, Home } from "lucide-react";
+import { FileUp, RefreshCcw, Home } from "lucide-react";
 
 export default function OwnerLaporan() {
   const router = useRouter();
   const [transaksi, setTransaksi] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [previewItems, setPreviewItems] = useState([]);
   const [uploading, setUploading] = useState(false);
-  const [importing, setImporting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
@@ -35,7 +33,20 @@ export default function OwnerLaporan() {
       const res = await fetch("/api/admin-transaksi");
       const data = await res.json();
       if (Array.isArray(data)) {
-        setTransaksi(data);
+        // Aggregate data by product and buyer
+        const aggregated = {};
+        data.forEach((t) => {
+          const key = `${t.produkId}_${t.nama_pembeli}_${t.status}`;
+          if (!aggregated[key]) {
+            aggregated[key] = {
+              ...t,
+              jumlah: 1,
+            };
+          } else {
+            aggregated[key].jumlah += 1;
+          }
+        });
+        setTransaksi(Object.values(aggregated));
       } else {
         setTransaksi([]);
       }
@@ -50,8 +61,18 @@ export default function OwnerLaporan() {
     loadTransaksi();
   }, []);
 
+  // Filter hanya transaksi dengan status selesai/diterima (tidak termasuk proses/dibatalkan)
+  const transaksiSelesai = transaksi.filter(t =>
+    ["selesai", "Selesai", "diterima", "Diterima"].includes(t.status)
+  );
+
   const totalTransaksi = transaksi.length;
-  const totalPendapatan = transaksi.reduce(
+  const totalTransaksiSelesai = transaksiSelesai.length;
+  const totalPendapatan = transaksiSelesai.reduce(
+    (sum, t) => sum + (t.total_harga || 0),
+    0
+  );
+  const totalPendapatanAll = transaksi.reduce(
     (sum, t) => sum + (t.total_harga || 0),
     0
   );
@@ -68,7 +89,6 @@ export default function OwnerLaporan() {
 
     setErrorMsg("");
     setSuccessMsg("");
-    setPreviewItems([]);
     setUploading(true);
 
     try {
@@ -82,60 +102,25 @@ export default function OwnerLaporan() {
 
       const json = await res.json();
 
-      if (!res.ok) {
-        setErrorMsg(json.error || "Gagal memproses file");
-      } else {
-        setPreviewItems(json.items || []);
+      if (json.success) {
         setSuccessMsg(
-          `Berhasil membaca ${json.items.length} baris. Klik "Simpan ke Database" untuk import.`
+          `✅ Upload berhasil! ${json.inserted} transaksi berhasil dimasukkan ke database.`
         );
+        // Refresh data
+        loadTransaksi();
+      } else if (json.error) {
+        setErrorMsg("❌ Error upload: " + json.error);
+      } else if (!res.ok) {
+        setErrorMsg("❌ Upload gagal dengan status: " + res.status);
       }
     } catch (err) {
-      setErrorMsg("Error upload: " + err.message);
+      setErrorMsg("❌ ERROR: " + err.message);
     } finally {
       setUploading(false);
       e.target.value = "";
     }
   }
 
-  // ================= IMPORT TO DB =================
-  async function handleImport() {
-    if (!previewItems.length) {
-      alert("Tidak ada data untuk diimport");
-      return;
-    }
-
-    if (!confirm("Yakin ingin menyimpan data upload ke database?")) return;
-
-    setImporting(true);
-    setErrorMsg("");
-    setSuccessMsg("");
-
-    try {
-      const res = await fetch("/api/owner-laporan-import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: previewItems }),
-      });
-
-      const json = await res.json();
-
-      if (!res.ok) {
-        setErrorMsg(json.error || "Gagal import ke database");
-      } else {
-        setSuccessMsg(
-          `Berhasil import ${json.count} transaksi ke database.`
-        );
-        setPreviewItems([]);
-        // refresh data utama
-        loadTransaksi();
-      }
-    } catch (err) {
-      setErrorMsg("Error import: " + err.message);
-    } finally {
-      setImporting(false);
-    }
-  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#1a1a1a] via-[#2d2d2d] to-[#3e3e3e] text-white">
@@ -160,22 +145,30 @@ export default function OwnerLaporan() {
       {/* CONTENT */}
       <main className="flex-1 px-8 pb-10 pt-6 space-y-8">
         {/* STAT KARTU */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-[#1f1f1f] border border-gray-700 rounded-xl p-4 shadow">
-            <p className="text-sm text-gray-400">Total Transaksi</p>
+            <p className="text-sm text-gray-400">Total Transaksi (Semua)</p>
             <p className="text-3xl font-bold mt-1">{totalTransaksi}</p>
+            <p className="text-xs text-gray-500 mt-1">Termasuk proses & dibatalkan</p>
           </div>
           <div className="bg-[#1f1f1f] border border-gray-700 rounded-xl p-4 shadow">
-            <p className="text-sm text-gray-400">Total Pendapatan</p>
-            <p className="text-3xl font-bold mt-1 text-green-400">
+            <p className="text-sm text-gray-400">Transaksi Selesai</p>
+            <p className="text-3xl font-bold mt-1 text-blue-400">{totalTransaksiSelesai}</p>
+            <p className="text-xs text-gray-500 mt-1">Status: Selesai/Diterima</p>
+          </div>
+          <div className="bg-[#1f1f1f] border border-gray-700 rounded-xl p-4 shadow">
+            <p className="text-sm text-gray-400">Pendapatan (Selesai)</p>
+            <p className="text-2xl font-bold mt-1 text-green-400">
               Rp {totalPendapatan.toLocaleString("id-ID")}
             </p>
+            <p className="text-xs text-gray-500 mt-1">Hanya transaksi selesai</p>
           </div>
           <div className="bg-[#1f1f1f] border border-gray-700 rounded-xl p-4 shadow">
-            <p className="text-sm text-gray-400">Status</p>
-            <p className="text-lg mt-1">
-              Data dari <span className="font-semibold">admin-transaksi</span>
+            <p className="text-sm text-gray-400">Total Semua Status</p>
+            <p className="text-2xl font-bold mt-1 text-yellow-400">
+              Rp {totalPendapatanAll.toLocaleString("id-ID")}
             </p>
+            <p className="text-xs text-gray-500 mt-1">Termasuk semua status</p>
           </div>
         </div>
 
@@ -204,7 +197,8 @@ export default function OwnerLaporan() {
                     <th className="py-2 pr-3">ID</th>
                     <th className="py-2 pr-3">Tanggal</th>
                     <th className="py-2 pr-3">Nama Pembeli</th>
-                    <th className="py-2 pr-3">Produk ID</th>
+                    <th className="py-2 pr-3">Nama Produk</th>
+                    <th className="py-2 pr-3">Jumlah Terjual</th>
                     <th className="py-2 pr-3">Total Harga</th>
                     <th className="py-2 pr-3">Status</th>
                   </tr>
@@ -218,7 +212,8 @@ export default function OwnerLaporan() {
                       <td className="py-2 pr-3">{t.id}</td>
                       <td className="py-2 pr-3">{formatTanggal(t.tanggal)}</td>
                       <td className="py-2 pr-3">{t.nama_pembeli}</td>
-                      <td className="py-2 pr-3">{t.produkId}</td>
+                      <td className="py-2 pr-3">{t.produk?.nama || "N/A"}</td>
+                      <td className="py-2 pr-3">{t.jumlah || 1}</td>
                       <td className="py-2 pr-3">
                         Rp {t.total_harga.toLocaleString("id-ID")}
                       </td>
@@ -237,9 +232,9 @@ export default function OwnerLaporan() {
             <div>
               <h2 className="text-lg font-semibold">Upload Laporan CSV / JSON</h2>
               <p className="text-xs text-gray-400 mt-1">
-                Kolom minimal: <code>produkId</code>, <code>nama_pembeli</code>,{" "}
-                <code>total_harga</code>, (opsional: <code>tanggal</code>,{" "}
-                <code>status</code>)
+                Kolom wajib: <code>nama_produk</code>, <code>nama_pembeli</code>,{" "}
+                <code>total_harga</code>, <code>jumlah</code> (opsional:{" "}
+                <code>tanggal</code>, <code>status</code>)
               </p>
             </div>
 
@@ -266,56 +261,6 @@ export default function OwnerLaporan() {
             <p className="text-sm text-green-400 bg-green-950/30 border border-green-700 rounded-lg px-3 py-2">
               {successMsg}
             </p>
-          )}
-
-          {previewItems.length > 0 && (
-            <div className="mt-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold">Preview Data Upload</h3>
-                <button
-                  onClick={handleImport}
-                  disabled={importing}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-sm font-semibold disabled:opacity-60"
-                >
-                  <Save size={16} />
-                  <span>
-                    {importing ? "Menyimpan..." : "Simpan ke Database"}
-                  </span>
-                </button>
-              </div>
-
-              <div className="overflow-x-auto max-h-80 border border-gray-700 rounded-lg">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-[#252525] text-gray-300">
-                    <tr>
-                      <th className="py-2 px-2">Produk ID</th>
-                      <th className="py-2 px-2">Nama Pembeli</th>
-                      <th className="py-2 px-2">Total Harga</th>
-                      <th className="py-2 px-2">Tanggal</th>
-                      <th className="py-2 px-2">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {previewItems.map((it, idx) => (
-                      <tr
-                        key={idx}
-                        className="border-t border-gray-800 hover:bg-[#272727]"
-                      >
-                        <td className="py-1 px-2">{it.produkId}</td>
-                        <td className="py-1 px-2">{it.nama_pembeli}</td>
-                        <td className="py-1 px-2">
-                          Rp {Number(it.total_harga).toLocaleString("id-ID")}
-                        </td>
-                        <td className="py-1 px-2">
-                          {formatTanggal(it.tanggal)}
-                        </td>
-                        <td className="py-1 px-2 capitalize">{it.status}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
           )}
         </section>
       </main>

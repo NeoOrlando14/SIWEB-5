@@ -97,7 +97,8 @@ export default function OwnerPoin() {
           <h1 className="text-2xl font-bold text-[#00bcd4]">POS</h1>
 
           <button onClick={() => router.push("/owner-dashboard")} className={iconClasses("/owner-dashboard")}>🏠</button>
-          <button onClick={() => router.push("/owner-laporan")} className={iconClasses("/owner-laporan")}>🧾</button>
+          <button onClick={() => router.push("/owner-laporan")} className={iconClasses("/owner-laporan")}>📊</button>
+          <button onClick={() => router.push("/owner-riwayat-pemesanan")} className={iconClasses("/owner-riwayat-pemesanan")}>📋</button>
           <button onClick={() => router.push("/owner-poin")} className={iconClasses("/owner-poin")}>🎁</button>
         </div>
 

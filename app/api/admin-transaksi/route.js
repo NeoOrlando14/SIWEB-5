@@ -4,6 +4,9 @@ const prisma = new PrismaClient();
 export async function GET() {
   try {
     const data = await prisma.transaksi.findMany({
+      include: {
+        produk: true,
+      },
       orderBy: { id: "desc" }
     });
     return Response.json(data);
@@ -23,6 +26,8 @@ export async function POST(req) {
         total_harga: Number(body.total_harga),
         tanggal: new Date(body.tanggal),
         status: body.status || "pending",
+        userId: body.userId ? Number(body.userId) : null,
+        bulk_payment_id: body.bulk_payment_id || null, // Save bulk_payment_id
       },
     });
 

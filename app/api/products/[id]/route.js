@@ -33,7 +33,7 @@ export async function PUT(req, { params }) {
 
   try {
     const body = await req.json();
-    const { nama, harga, stok } = body;
+    const { nama, harga, stok, image } = body;
 
     const updated = await prisma.produk.update({
       where: { id },
@@ -41,6 +41,7 @@ export async function PUT(req, { params }) {
         ...(nama !== undefined && { nama }),
         ...(harga !== undefined && { harga: Number(harga) }),
         ...(stok !== undefined && { stok: Number(stok) }),
+        ...(image !== undefined && { image }),
       },
     });
 
@@ -58,11 +59,33 @@ export async function DELETE(req, { params }) {
   const id = Number(params.id);
 
   try {
+    // Check if product exists and get stock info
+    const product = await prisma.produk.findUnique({
+      where: { id }
+    });
+
+    if (!product) {
+      return new Response(
+        JSON.stringify({ error: "Produk tidak ditemukan" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // 🛡️ PROTEKSI: Tidak bisa delete produk yang masih ada stoknya
+    if (product.stok > 0) {
+      return new Response(
+        JSON.stringify({
+          error: `Tidak dapat menghapus produk yang masih memiliki stok (${product.stok} item). Habiskan stok terlebih dahulu.`
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     await prisma.produk.delete({
       where: { id },
     });
 
-    return Response.json({ success: true });
+    return Response.json({ success: true, message: "Produk berhasil dihapus" });
   } catch (err) {
     console.error("DELETE /api/products/[id] error:", err);
     return new Response(

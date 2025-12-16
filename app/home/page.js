@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Coffee, FileText, LogOut } from "lucide-react";
 
 export default function Home() {
   const router = useRouter();
+  const [products, setProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
   // ======================== PROTECT PAGE (SUPER AMAN) ========================
   useEffect(() => {
@@ -18,7 +20,36 @@ export default function Home() {
       router.replace("/login");
       return;
     }
+
+    // Load products from database
+    loadProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ======================== LOAD PRODUCTS ========================
+  const loadProducts = async () => {
+    try {
+      setLoadingProducts(true);
+      const res = await fetch('/api/products');
+      const data = await res.json();
+
+      // Get top 4 products (you can customize the logic)
+      // Options:
+      // 1. First 4 products
+      // 2. Products with highest rating
+      // 3. Products with most stock
+      // 4. Random 4 products
+
+      const topProducts = data.slice(0, 4); // Take first 4 products
+      setProducts(topProducts);
+    } catch (err) {
+      console.error('Error loading products:', err);
+      // Fallback to empty array if error
+      setProducts([]);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
 
   // ======================== LOGOUT ========================
   const handleLogout = () => {
@@ -77,30 +108,78 @@ export default function Home() {
 
         <h1 className="text-3xl font-bold mb-8">Menu Sebelah Kopi</h1>
 
-        {/* ======================= MENU PRODUK ======================= */}
+        {/* ======================= MENU PRODUK (REAL DATA) ======================= */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {[
-            { name: "Bunny Cake", price: 5000, img: "/placeholder.png" },
-            { name: "Tedi Cake", price: 5000, img: "/placeholder.png" },
-            { name: "Lava Choco", price: 7000, img: "/placeholder.png" },
-            { name: "Sweet Dessert", price: 9000, img: "/placeholder.png" },
-          ].map((p) => (
-            <div
-              key={p.name}
-              className="bg-[#1f1f1f] p-4 rounded-xl border border-gray-700 shadow hover:bg-[#272727] transition cursor-pointer"
-            >
-              <img
-                src={p.img}
-                alt={p.name}
-                className="h-32 w-full object-cover rounded-lg mb-3"
-              />
-              <h3 className="font-semibold text-lg">{p.name}</h3>
-              <p className="text-[#ffcf80] text-xl font-bold">
-                Rp {p.price.toLocaleString("id-ID")}
-              </p>
+          {loadingProducts ? (
+            // Loading skeleton
+            Array.from({ length: 4 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="bg-[#1f1f1f] p-4 rounded-xl border border-gray-700 shadow animate-pulse"
+              >
+                <div className="h-32 w-full bg-gray-700 rounded-lg mb-3"></div>
+                <div className="h-4 bg-gray-700 rounded w-3/4 mb-2"></div>
+                <div className="h-6 bg-gray-700 rounded w-1/2"></div>
+              </div>
+            ))
+          ) : products.length > 0 ? (
+            // Real products from database
+            products.map((product) => (
+              <div
+                key={product.id}
+                onClick={() => router.push("/shop")}
+                className="bg-[#1f1f1f] p-4 rounded-xl border border-gray-700 shadow hover:bg-[#272727] hover:scale-105 transition-all cursor-pointer"
+              >
+                <img
+                  src={product.image || "/placeholder.png"}
+                  alt={product.nama}
+                  className="h-32 w-full object-cover rounded-lg mb-3"
+                />
+                <h3 className="font-semibold text-lg truncate">{product.nama}</h3>
+                <p className="text-[#ffcf80] text-xl font-bold">
+                  Rp {product.harga.toLocaleString("id-ID")}
+                </p>
+
+                {/* Stock indicator */}
+                {product.stok > 0 ? (
+                  <p className="text-green-400 text-xs mt-1">
+                    Stok: {product.stok}
+                  </p>
+                ) : (
+                  <p className="text-red-400 text-xs mt-1">
+                    Habis
+                  </p>
+                )}
+
+                {/* Rating (if available) */}
+                {product.rating && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <span className="text-yellow-400">⭐</span>
+                    <span className="text-sm text-gray-400">{product.rating}/5</span>
+                  </div>
+                )}
+              </div>
+            ))
+          ) : (
+            // No products
+            <div className="col-span-full text-center py-8 text-gray-400">
+              <p>Belum ada produk tersedia</p>
+              <p className="text-sm mt-2">Admin sedang menambahkan produk...</p>
             </div>
-          ))}
+          )}
         </div>
+
+        {/* Button to see all products */}
+        {!loadingProducts && products.length > 0 && (
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => router.push("/shop")}
+              className="px-8 py-3 bg-[#ffcf80] hover:bg-yellow-300 text-black font-bold rounded-full shadow-lg transition-all hover:scale-105"
+            >
+              Lihat Semua Menu →
+            </button>
+          </div>
+        )}
 
         {/* ======================= MAPS LOKASI ======================= */}
         <div className="mt-12 bg-[#1f1f1f] p-6 rounded-xl border border-gray-700 shadow">
@@ -124,21 +203,40 @@ export default function Home() {
           <h2 className="text-2xl font-bold mb-4">Testimoni Pelanggan</h2>
 
           {[
-            { nama: "Neo", warna: "bg-[#3a3a3a]", ulasan: "Rasanya mantap polll!" },
-            { nama: "Hezron", warna: "bg-[#2d2d2d]", ulasan: "Pelayanan cepat dan ramah." },
-            { nama: "Pivin", warna: "bg-[#404040]", ulasan: "Harga murah tapi kualitas tinggi." },
+            {
+              nama: "Neo",
+              warna: "bg-[#3a3a3a]",
+              ulasan: "Rasanya mantap polll! Kopinya enak banget, tempatnya juga nyaman.",
+              rating: 5
+            },
+            {
+              nama: "Hezron",
+              warna: "bg-[#2d2d2d]",
+              ulasan: "Pelayanan cepat dan ramah. Harga terjangkau untuk mahasiswa.",
+              rating: 5
+            },
+            {
+              nama: "Pivin",
+              warna: "bg-[#404040]",
+              ulasan: "Harga murah tapi kualitas tinggi. Paling suka Lava Choco-nya!",
+              rating: 5
+            },
           ].map((u, idx) => (
-            <div key={idx} className={`${u.warna} p-4 mb-4 rounded-xl border border-gray-700`}>
+            <div key={idx} className={`${u.warna} p-4 mb-4 rounded-xl border border-gray-700 hover:border-gray-600 transition`}>
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center">
-                  👤
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 text-white flex items-center justify-center font-bold text-lg">
+                  {u.nama.charAt(0)}
                 </div>
-                <div>
+                <div className="flex-1">
                   <h3 className="font-bold">{u.nama}</h3>
-                  <p className="text-sm text-gray-400">Ulasan pelanggan</p>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: u.rating }).map((_, i) => (
+                      <span key={i} className="text-yellow-400 text-sm">⭐</span>
+                    ))}
+                  </div>
                 </div>
               </div>
-              <p className="mt-2">{u.ulasan}</p>
+              <p className="mt-3 text-gray-300 italic">&ldquo;{u.ulasan}&rdquo;</p>
             </div>
           ))}
         </div>

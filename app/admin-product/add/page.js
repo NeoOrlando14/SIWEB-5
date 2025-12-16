@@ -9,9 +9,42 @@ export default function AddProduct() {
   const [nama, setNama] = useState("");
   const [harga, setHarga] = useState("");
   const [stok, setStok] = useState("");
+  const [image, setImage] = useState(""); // Base64 string
+  const [imagePreview, setImagePreview] = useState(""); // Preview URL
+
+  // Handle image upload
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('File harus berupa gambar (JPG, PNG, dll)');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Ukuran gambar maksimal 5MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result;
+      setImage(base64String);
+      setImagePreview(base64String);
+    };
+    reader.readAsDataURL(file);
+  };
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (!image) {
+      alert("Gambar produk wajib diupload!");
+      return;
+    }
 
     const res = await fetch("/api/products", {
       method: "POST",
@@ -20,6 +53,7 @@ export default function AddProduct() {
         nama,
         harga: Number(harga),
         stok: Number(stok),
+        image: image, // Base64 string
       }),
     });
 
@@ -77,10 +111,63 @@ export default function AddProduct() {
               type="number"
               value={stok}
               onChange={(e) => setStok(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg bg-[#1b1b1b] text-white 
-                border border-gray-700 focus:border-gray-500 
+              className="w-full px-4 py-2 rounded-lg bg-[#1b1b1b] text-white
+                border border-gray-700 focus:border-gray-500
                 focus:ring-1 focus:ring-gray-400 outline-none"
             />
+          </div>
+
+          {/* Gambar Produk */}
+          <div>
+            <label className="block mb-1 text-gray-300">Gambar Produk</label>
+
+            {/* Upload Button */}
+            <div className="mb-3">
+              <label className="flex items-center justify-center w-full px-4 py-3 rounded-lg
+                bg-[#1b1b1b] border-2 border-dashed border-gray-600
+                hover:border-gray-500 cursor-pointer transition">
+                <div className="text-center">
+                  <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <p className="mt-2 text-sm text-gray-400">
+                    <span className="font-semibold text-blue-400">Klik untuk upload</span> atau drag & drop
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF (Max 5MB)</p>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                  required
+                />
+              </label>
+            </div>
+
+            {/* Image Preview */}
+            {imagePreview && (
+              <div className="relative">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="w-full h-64 object-cover rounded-lg border border-gray-700"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImage("");
+                    setImagePreview("");
+                  }}
+                  className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white
+                    rounded-full p-2 shadow-lg transition"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Tombol */}

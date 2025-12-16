@@ -14,12 +14,36 @@ export async function PUT(req) {
       );
     }
 
+    // Get current product to check stock
+    const currentProduct = await prisma.produk.findUnique({
+      where: { id: Number(id) }
+    });
+
+    if (!currentProduct) {
+      return new Response(
+        JSON.stringify({ error: "Produk tidak ditemukan" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Calculate new stock value
+    const newStok = currentProduct.stok + Number(amount);
+
+    // Prevent negative stock
+    if (newStok < 0) {
+      return new Response(
+        JSON.stringify({
+          error: "Stok tidak boleh kurang dari 0",
+          currentStok: currentProduct.stok
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const updated = await prisma.produk.update({
       where: { id: Number(id) },
       data: {
-        stok: {
-          increment: Number(amount),
-        },
+        stok: newStok,
       },
     });
 

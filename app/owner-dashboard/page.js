@@ -30,25 +30,50 @@ export default function OwnerDashboard() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // ==================== DATA SEMENTARA ====================
-  const [stats, setStats] = useState({
-    totalProduk: 13,
-    totalOrder: 5,
-    totalSales: 11205000,
-    produkTerlaris: "Kue Rumah Natal",
-  });
-
-  const [chartData, setChartData] = useState([
-    { tanggal: "2025-11-18", jumlah: 0 },
-    { tanggal: "2025-11-19", jumlah: 0 },
-    { tanggal: "2025-11-20", jumlah: 0 },
-    { tanggal: "2025-11-21", jumlah: 0 },
-    { tanggal: "2025-11-22", jumlah: 0 },
-    { tanggal: "2025-11-23", jumlah: 0 },
-    { tanggal: "2025-11-24", jumlah: 1 },
-  ]);
-
+  // ==================== STATE ====================
+  const [stats, setStats] = useState(null);
+  const [chartData, setChartData] = useState([]);
   const [userName, setUserName] = useState("Owner");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [filter, setFilter] = useState("month"); // default: month
+  const [customDate, setCustomDate] = useState("");
+  const [customMonth, setCustomMonth] = useState("");
+  const [customYear, setCustomYear] = useState("");
+
+  // ==================== FETCH METRICS ====================
+  const fetchMetrics = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      let url = `/api/owner-metric?filter=${filter}`;
+
+      // Add custom date parameters if available
+      if (filter === "custom_date" && customDate) {
+        url += `&date=${customDate}`;
+      } else if (filter === "custom_month" && customMonth) {
+        url += `&month=${customMonth}`;
+      } else if (filter === "custom_year" && customYear) {
+        url += `&year=${customYear}`;
+      }
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Gagal mengambil data");
+      const data = await res.json();
+
+      setStats({
+        totalProduk: data.totalProduk,
+        totalOrder: data.totalOrder,
+        totalSales: data.totalSales,
+        produkTerlaris: data.produkTerlaris,
+      });
+      setChartData(data.grafikData);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ==================== PROTECT ROLE ====================
   useEffect(() => {
@@ -65,10 +90,33 @@ export default function OwnerDashboard() {
 
     const name = email.split("@")[0];
     setUserName(name.charAt(0).toUpperCase() + name.slice(1));
+
+    // Fetch initial metrics
+    fetchMetrics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
+  // ==================== RE-FETCH ON FILTER CHANGE ====================
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const role = window.localStorage.getItem("role");
+    if (role === "owner") {
+      fetchMetrics();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, customDate, customMonth, customYear]);
+
   // ==================== LOGOUT ====================
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      // Panggil API logout untuk hapus cookie
+      await fetch('/api/logout', { method: 'POST' });
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+
+    // Hapus localStorage
     window.localStorage.clear();
     router.push("/login");
   };
@@ -94,7 +142,11 @@ export default function OwnerDashboard() {
           </button>
 
           <button onClick={() => router.push("/owner-laporan")} className={iconClasses("/owner-laporan")}>
-            🧾
+            📊
+          </button>
+
+          <button onClick={() => router.push("/owner-riwayat-pemesanan")} className={iconClasses("/owner-riwayat-pemesanan")}>
+            📋
           </button>
 
           <button onClick={() => router.push("/owner-poin")} className={iconClasses("/owner-poin")}>
@@ -124,56 +176,190 @@ export default function OwnerDashboard() {
           </div>
         </div>
 
-        {/* ==================== STAT KOTAK ==================== */}
-        <div className="grid grid-cols-4 gap-6 mb-10">
+        {/* ==================== FILTER BUTTONS ==================== */}
+        {/* Filter Buttons Row 1 - Quick Filters */}
+        <div className="flex gap-3 mb-4">
+          <button
+            onClick={() => setFilter("day")}
+            className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+              filter === "day"
+                ? "bg-blue-600 text-white shadow-lg scale-105"
+                : "bg-[#1f1f1f] text-gray-300 border border-gray-700 hover:bg-[#2a2a2a]"
+            }`}
+          >
+            📅 Hari Ini
+          </button>
+          <button
+            onClick={() => setFilter("month")}
+            className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+              filter === "month"
+                ? "bg-blue-600 text-white shadow-lg scale-105"
+                : "bg-[#1f1f1f] text-gray-300 border border-gray-700 hover:bg-[#2a2a2a]"
+            }`}
+          >
+            📊 Bulan Ini
+          </button>
+          <button
+            onClick={() => setFilter("year")}
+            className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+              filter === "year"
+                ? "bg-blue-600 text-white shadow-lg scale-105"
+                : "bg-[#1f1f1f] text-gray-300 border border-gray-700 hover:bg-[#2a2a2a]"
+            }`}
+          >
+            📈 Tahun Ini
+          </button>
+        </div>
 
-          {/* TOTAL PRODUK */}
-          <div className="bg-[#1f1f1f] border border-gray-700 p-5 rounded-xl shadow">
-            <p className="text-gray-400 text-sm">Total Produk</p>
-            <p className="text-3xl font-bold mt-2">{stats.totalProduk}</p>
-            <p className="text-green-400 text-xs mt-1">⬆ Up from yesterday</p>
+        {/* Filter Buttons Row 2 - Custom Date Filters */}
+        <div className="flex gap-3 mb-6 items-center flex-wrap">
+          {/* Filter by Specific Date */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setFilter("custom_date")}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                filter === "custom_date"
+                  ? "bg-green-600 text-white shadow-lg"
+                  : "bg-[#1f1f1f] text-gray-300 border border-gray-700 hover:bg-[#2a2a2a]"
+              }`}
+            >
+              📆 Tanggal Tertentu
+            </button>
+            {filter === "custom_date" && (
+              <input
+                type="date"
+                value={customDate}
+                onChange={(e) => setCustomDate(e.target.value)}
+                className="px-3 py-2 rounded-lg bg-[#2a2a2a] border border-gray-700 text-white outline-none focus:border-green-500"
+              />
+            )}
           </div>
 
-          {/* TOTAL ORDER */}
-          <div className="bg-[#1f1f1f] border border-gray-700 p-5 rounded-xl shadow">
-            <p className="text-gray-400 text-sm">Total Order</p>
-            <p className="text-3xl font-bold mt-2">{stats.totalOrder}</p>
-            <p className="text-green-400 text-xs mt-1">⬆ Up from last week</p>
+          {/* Filter by Specific Month */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setFilter("custom_month")}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                filter === "custom_month"
+                  ? "bg-purple-600 text-white shadow-lg"
+                  : "bg-[#1f1f1f] text-gray-300 border border-gray-700 hover:bg-[#2a2a2a]"
+              }`}
+            >
+              📅 Bulan Tertentu
+            </button>
+            {filter === "custom_month" && (
+              <input
+                type="month"
+                value={customMonth}
+                onChange={(e) => setCustomMonth(e.target.value)}
+                className="px-3 py-2 rounded-lg bg-[#2a2a2a] border border-gray-700 text-white outline-none focus:border-purple-500"
+              />
+            )}
           </div>
 
-          {/* TOTAL SALES */}
-          <div className="bg-[#1f1f1f] border border-gray-700 p-5 rounded-xl shadow">
-            <p className="text-gray-400 text-sm">Total Sales</p>
-            <p className="text-2xl font-bold mt-2 text-white">
-              Rp {stats.totalSales.toLocaleString("id-ID")}
-            </p>
-            <p className="text-red-400 text-xs mt-1">⬇ Down from yesterday</p>
-          </div>
-
-          {/* PRODUK TERLARIS */}
-          <div className="bg-[#1f1f1f] border border-gray-700 p-5 rounded-xl shadow">
-            <p className="text-gray-400 text-sm">Produk Terlaris</p>
-            <p className="text-[19px] font-bold mt-2 text-yellow-400">
-              {stats.produkTerlaris}
-            </p>
-            <p className="text-yellow-300 text-xs mt-1">⭐ Best Seller</p>
+          {/* Filter by Specific Year */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setFilter("custom_year")}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                filter === "custom_year"
+                  ? "bg-orange-600 text-white shadow-lg"
+                  : "bg-[#1f1f1f] text-gray-300 border border-gray-700 hover:bg-[#2a2a2a]"
+              }`}
+            >
+              📊 Tahun Tertentu
+            </button>
+            {filter === "custom_year" && (
+              <input
+                type="number"
+                min="2020"
+                max="2099"
+                placeholder="YYYY"
+                value={customYear}
+                onChange={(e) => setCustomYear(e.target.value)}
+                className="px-3 py-2 rounded-lg bg-[#2a2a2a] border border-gray-700 text-white outline-none focus:border-orange-500 w-24"
+              />
+            )}
           </div>
         </div>
+
+        {/* ==================== STAT KOTAK ==================== */}
+        {loading && (
+          <div className="grid grid-cols-4 gap-6 mb-10 animate-pulse">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-gray-800 h-24 rounded-xl"></div>
+            ))}
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-10 p-4 bg-red-900/50 border border-red-700 rounded-lg text-red-200">
+            Error: {error}
+          </div>
+        )}
+
+        {!loading && stats && (
+          <div className="grid grid-cols-4 gap-6 mb-10">
+            {/* TOTAL PRODUK */}
+            <div className="bg-[#1f1f1f] border border-gray-700 p-5 rounded-xl shadow">
+              <p className="text-gray-400 text-sm">Total Produk</p>
+              <p className="text-3xl font-bold mt-2">{stats.totalProduk}</p>
+              <p className="text-green-400 text-xs mt-1">⬆ Up from yesterday</p>
+            </div>
+
+            {/* TOTAL ORDER */}
+            <div className="bg-[#1f1f1f] border border-gray-700 p-5 rounded-xl shadow">
+              <p className="text-gray-400 text-sm">Total Order</p>
+              <p className="text-3xl font-bold mt-2">{stats.totalOrder}</p>
+              <p className="text-green-400 text-xs mt-1">⬆ Up from last week</p>
+            </div>
+
+            {/* TOTAL SALES */}
+            <div className="bg-[#1f1f1f] border border-gray-700 p-5 rounded-xl shadow">
+              <p className="text-gray-400 text-sm">Total Sales</p>
+              <p className="text-2xl font-bold mt-2 text-white">
+                Rp {stats.totalSales.toLocaleString("id-ID")}
+              </p>
+              <p className="text-red-400 text-xs mt-1">⬇ Down from yesterday</p>
+            </div>
+
+            {/* PRODUK TERLARIS */}
+            <div className="bg-[#1f1f1f] border border-gray-700 p-5 rounded-xl shadow">
+              <p className="text-gray-400 text-sm">Produk Terlaris</p>
+              <p className="text-[19px] font-bold mt-2 text-yellow-400">
+                {stats.produkTerlaris}
+              </p>
+              <p className="text-yellow-300 text-xs mt-1">⭐ Best Seller</p>
+            </div>
+          </div>
+        )}
 
         {/* ==================== GRAFIK ==================== */}
         <div className="bg-[#1f1f1f] border border-gray-700 p-6 rounded-xl mb-8 shadow">
           <h2 className="text-lg font-bold mb-4">Grafik Penjualan</h2>
 
-          <div className="w-full h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <XAxis dataKey="tanggal" stroke="#ccc" />
-                <YAxis stroke="#ccc" />
-                <Tooltip contentStyle={{ background: "#222", borderColor: "#555", color: "#fff" }} />
-                <Line type="monotone" dataKey="jumlah" stroke="#4fc3f7" strokeWidth={2} dot />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          {loading && (
+            <div className="w-full h-72 bg-gray-800 rounded animate-pulse"></div>
+          )}
+
+          {!loading && chartData.length > 0 && (
+            <div className="w-full h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <XAxis dataKey="tanggal" stroke="#ccc" />
+                  <YAxis stroke="#ccc" />
+                  <Tooltip contentStyle={{ background: "#222", borderColor: "#555", color: "#fff" }} />
+                  <Line type="monotone" dataKey="jumlah" stroke="#4fc3f7" strokeWidth={2} dot />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {!loading && chartData.length === 0 && (
+            <div className="w-full h-72 flex items-center justify-center text-gray-500">
+              Tidak ada data untuk periode ini
+            </div>
+          )}
         </div>
 
         {/* ==================== FOOTER ==================== */}

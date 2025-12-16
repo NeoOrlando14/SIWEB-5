@@ -181,7 +181,7 @@ export default function AdminPelanggan() {
                     <td>
                       <div className="flex items-center space-x-5 text-xl">
                         <X className="text-red-500 hover:text-red-400 cursor-pointer" onClick={() => deleteCustomer(c.id)} />
-                        <Check className="text-green-400 hover:text-green-300 cursor-pointer" />
+                        {/* <Check className="text-green-400 hover:text-green-300 cursor-pointer" /> */}
                       </div>
                     </td>
                   </tr>

@@ -127,7 +127,7 @@ export default function AdminPoin() {
               <thead>
                 <tr className="border-b border-gray-600 text-gray-300">
                   <th className="py-3">ID Poin</th>
-                  <th>ID Pelanggan</th>
+                  <th>Nama Pelanggan</th>
                   <th>Jumlah</th>
                   <th>Status</th>
                   <th>Aksi</th>
@@ -141,7 +141,7 @@ export default function AdminPoin() {
                     className="border-b border-gray-700 hover:bg-[#333] transition"
                   >
                     <td className="py-3">{poin.id}</td>
-                    <td>{poin.customerId}</td>
+                    <td>{poin.customer?.nama || "N/A"}</td>
 
                     <td>
                       <button

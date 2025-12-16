@@ -8,6 +8,7 @@ export default function HomeRedirect() {
 
   useEffect(() => {
     router.replace("/login"); // PAKSA ke login dulu, TIDAK cek localStorage
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return null;
